@@ -519,4 +519,3 @@ JarvisAI can be extended in several ways:
 
 JarvisAI - A Self-Hosted RAG System with Knowledge Graph
 
-[GitHub Repository](https://github.com/yourusername/jarvisai)
