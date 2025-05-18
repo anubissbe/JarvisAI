@@ -5,10 +5,6 @@ JarvisAI is a powerful self-hosted Retrieval-Augmented Generation (RAG) system t
 
 **Note:** JarvisAI is designed to run on systems with NVIDIA GPUs (particularly V100) for optimal performance.
 
-![JarvisAI Architecture Diagram](/api/placeholder/900/500)
-
-_JarvisAI System Architecture_
-
 Table of Contents
 -----------------
 
