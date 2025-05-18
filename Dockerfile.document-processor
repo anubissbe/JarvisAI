@@ -1,0 +1,48 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    build-essential \
+    python3-dev \
+    libpoppler-cpp-dev \
+    poppler-utils \
+    pkg-config \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create log directory
+RUN mkdir -p /var/log/jarvis
+
+# Install specific versions of marshmallow and environs first to avoid conflicts
+RUN pip install --no-cache-dir \
+    marshmallow==3.19.0 \
+    environs==9.5.0
+
+# Install Python dependencies with specific versions
+RUN pip install --no-cache-dir \
+    spacy==3.7.2 \
+    PyPDF2==3.0.1 \
+    pdftotext==2.2.2 \
+    pytextract==2.0.1 \
+    neo4j==5.12.0 \
+    watchdog==3.0.0 \
+    requests==2.31.0 \
+    pymilvus==2.3.3 \
+    numpy==1.26.0
+
+# Install spaCy model
+RUN python -m spacy download en_core_web_lg
+
+# Copy application code
+COPY document_processor.py /app/
+
+# Create directory for processed files
+RUN mkdir -p /processed
+
+# Command to run the application
+CMD ["python", "/app/document_processor.py"]
