@@ -571,7 +571,7 @@ Check the logs for specific errors related to file access, text extraction, or d
 If knowledge base isn't showing or working properly:
 
 <<<<<<< HEAD
-1.  Check Neo4j database: `http://localhost:7474` (neo4j/Loebas0128)
+1.  Check Neo4j database: `http://localhost:7474` (neo4j/HaHanotmypassword)
 =======
 1.  Check Neo4j database: `http://localhost:7474` (neo4j/hahanotmypassword)
 >>>>>>> 2c81290 (added install script)
