@@ -91,7 +91,7 @@ services:
       - ./hybrid_search:/opt/jarvis/hybrid_search
       - ./proxy:/app
     environment:
-      - NEO4J_PASSWORD=Loebas0128
+      - NEO4J_PASSWORD=hahanotmypassword
     restart: unless-stopped
 
   # Neo4j service - Graph database
@@ -102,7 +102,11 @@ services:
       - "7474:7474"
       - "7687:7687"
     environment:
+<<<<<<< HEAD
       - NEO4J_AUTH=neo4j/Verysecretpassword
+=======
+      - NEO4J_AUTH=neo4j/hahanotmypassword
+>>>>>>> 2c81290 (added install script)
       - NEO4J_dbms_memory_heap_max__size=4G
       - NEO4J_dbms_memory_pagecache_size=2G
     volumes:

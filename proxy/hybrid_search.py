@@ -233,7 +233,7 @@ if __name__ == "__main__":
     searcher = HybridSearch(
         neo4j_uri="bolt://localhost:7687",
         neo4j_user="neo4j",
-        neo4j_password="Loebas0128",
+        neo4j_password="hahanotmypassword",
         milvus_host="localhost",
         milvus_port="19530",
         ollama_url="http://localhost:11434"

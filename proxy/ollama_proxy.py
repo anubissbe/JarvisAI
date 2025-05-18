@@ -15,7 +15,7 @@ app = Flask(__name__, static_folder='static')
 # Configuration
 OLLAMA_API = "http://ollama:11434/api"
 KNOWLEDGE_BASE_ID = os.environ.get("KNOWLEDGE_BASE_ID", "96c3b9a4-10c1-400c-9d22-3e71cb8ed7fb")
-NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "Loebas0128")
+NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "hahanotmypassword")
 
 # Initialize the hybrid search
 print("Initializing HybridSearch with Neo4j connection...")

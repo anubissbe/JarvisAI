@@ -1,10 +1,35 @@
+<<<<<<< HEAD
+=======
+█████ ███ ██ ██ ██ ██████ ██ ███████ ███████ ██████ ███████ ██ ██ ████ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ███████ ██ ██ ██ ██ ██ ██████ ██ ███████ ███████ ██████ █████ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ████ ██████ ██████ ██ ███████ ███████ ██████ ███████ PRESENTS ██ ███████ ██████ ██ ██ ██ ███████ █████ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ █████ ██████ ██ ██ ██ ███████ ███████ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ █████ ██ ██ ██ ████ ██ ███████ ██ ██ ██
+
+>>>>>>> 2c81290 (added install script)
 JarvisAI: Self-Hosted RAG System with Knowledge Graph
 =====================================================
 
 JarvisAI is a powerful self-hosted Retrieval-Augmented Generation (RAG) system that combines Large Language Models with a hybrid knowledge retrieval mechanism based on both graph databases (Neo4j) and vector databases (Milvus). This system enables advanced document processing, knowledge extraction, and intelligent context-aware AI responses.
 
+<<<<<<< HEAD
 **Note:** JarvisAI is designed to run on systems with NVIDIA GPUs (particularly V100) for optimal performance.
 
+=======
+### 🚀 Quick Start
+
+To get started with JarvisAI, simply run:
+
+    git clone https://github.com/AnubissBE/jarvisai.git
+    cd jarvisai
+    chmod +x start.sh
+    ./start.sh
+
+The start.sh script will automatically check requirements, install dependencies, and launch the complete JarvisAI system.
+
+**Note:** JarvisAI is designed to run on systems with NVIDIA GPUs (particularly V100) for optimal performance.
+
+User OpenWebUI Ollama Proxy Ollama LLM Document Processor Neo4j Milvus etcd/MinIO Document Storage & Knowledge Base Legend Services Graph DB Vector DB
+
+_JarvisAI System Architecture_
+
+>>>>>>> 2c81290 (added install script)
 Table of Contents
 -----------------
 
@@ -184,17 +209,53 @@ JarvisAI has the following hardware and software requirements:
 Installation
 ------------
 
+<<<<<<< HEAD
 ### Step 1: Clone the Repository
 
     git clone https://github.com/yourusername/jarvisai.git
     cd jarvisai
 
 ### Step 2: Set Up Environment Variables
+=======
+### Automatic Installation
+
+JarvisAI comes with an automated setup script (`start.sh`) that handles all installation steps for you:
+
+    git clone https://github.com/AnubissBE/jarvisai.git
+    cd jarvisai
+    chmod +x start.sh
+    ./start.sh
+
+The script will:
+
+*   Check system requirements
+*   Install Docker and Docker Compose if needed
+*   Set up NVIDIA Container Toolkit if GPU is available
+*   Create necessary configuration files
+*   Start all Docker containers
+*   Set up the Jarvis model in Ollama
+*   Configure OpenWebUI
+*   Provide access information
+
+**Warning:** Initial startup may take considerable time (30+ minutes) as models are downloaded and containers are initialized.
+
+### Manual Installation
+
+If you prefer to install manually, follow these steps:
+
+#### Step 1: Clone the Repository
+
+    git clone https://github.com/AnubissBE/jarvisai.git
+    cd jarvisai
+
+#### Step 2: Set Up Environment Variables
+>>>>>>> 2c81290 (added install script)
 
 Create a secure secret key for the web interface:
 
     echo "WEBUI_SECRET_KEY=$(openssl rand -hex 32)" > .env
 
+<<<<<<< HEAD
 ### Step 3: Build and Start the Containers
 
     docker-compose up -d
@@ -202,15 +263,34 @@ Create a secure secret key for the web interface:
 **Warning:** Initial startup may take considerable time (30+ minutes) as models are downloaded and containers are initialized.
 
 ### Step 4: Verify Installation
+=======
+#### Step 3: Build and Start the Containers
+
+    docker-compose up -d
+
+#### Step 4: Create the Jarvis Model
+
+Wait for Ollama to start, then create the Jarvis model:
+
+    curl -X POST "http://localhost:11434/api/create" \
+        -H "Content-Type: application/json" \
+        -d "{\"name\": \"jarvis\", \"modelfile\": \"$(cat Modelfile | sed 's/"/\\"/g' | tr '\n' ' ')\"}"
+
+#### Step 5: Verify Installation
+>>>>>>> 2c81290 (added install script)
 
 Check if all services are running properly:
 
     docker-compose ps
 
+<<<<<<< HEAD
 Access the web interface at [http://localhost:3000](http://localhost:3000) and create an account. Default credentials are:
 
 *   Username: `admin`
 *   Password: `password` (change this immediately!)
+=======
+Access the web interface at [http://localhost:3000](http://localhost:3000) and create an account.
+>>>>>>> 2c81290 (added install script)
 
 Configuration
 -------------
@@ -293,7 +373,11 @@ Supported document types include:
 To chat with JarvisAI:
 
 1.  Click on the "Chat" tab in OpenWebUI
+<<<<<<< HEAD
 2.  Select the appropriate model (typically llama3.1)
+=======
+2.  Select the "jarvis" model from the dropdown
+>>>>>>> 2c81290 (added install script)
 3.  Select your knowledge base from the dropdown
 4.  Type your questions or commands
 
@@ -407,6 +491,51 @@ Using specialized regex patterns for personal information:
         # ... more patterns
     }
 
+<<<<<<< HEAD
+=======
+Automated Start Script
+----------------------
+
+JarvisAI includes a comprehensive `start.sh` script that automates the entire setup and launch process. This script performs the following functions:
+
+### Script Features
+
+*   System requirements check (CPU, RAM, disk space, GPU)
+*   Docker and Docker Compose installation if not present
+*   NVIDIA Container Toolkit setup for GPU support
+*   Environment configuration (.env creation, directory setup)
+*   Container build and launch
+*   Jarvis model creation in Ollama
+*   OpenWebUI configuration
+*   Startup monitoring and status reporting
+
+### Script Usage
+
+Simply make the script executable and run it:
+
+    chmod +x start.sh
+    ./start.sh
+
+The script will guide you through the entire process with clear, color-coded output.
+
+### CPU-Only Mode
+
+If no NVIDIA GPU is detected, the script will automatically configure JarvisAI to run in CPU-only mode. This will be significantly slower than GPU mode but allows the system to run on machines without dedicated GPUs.
+
+    
+    # Excerpt from start.sh showing GPU detection logic
+    if [ "$has_nvidia_gpu" = true ]; then
+        echo -e "${GREEN}Starting with GPU support...${NC}"
+        docker-compose up -d
+    else
+        echo -e "${YELLOW}Starting in CPU-only mode (performance will be limited)...${NC}"
+        # Remove GPU-specific configurations when running without GPU
+        sed 's/driver: nvidia/driver: none/g' docker-compose.yml > docker-compose-cpu.yml
+        docker-compose -f docker-compose-cpu.yml up -d
+    fi
+    
+
+>>>>>>> 2c81290 (added install script)
 Troubleshooting
 ---------------
 
@@ -441,7 +570,11 @@ Check the logs for specific errors related to file access, text extraction, or d
 
 If knowledge base isn't showing or working properly:
 
+<<<<<<< HEAD
 1.  Check Neo4j database: `http://localhost:7474` (neo4j/Loebas0128)
+=======
+1.  Check Neo4j database: `http://localhost:7474` (neo4j/hahanotmypassword)
+>>>>>>> 2c81290 (added install script)
 2.  Verify document processor logs: `docker-compose logs document-processor`
 
 ### Resetting the System
@@ -479,6 +612,10 @@ Development
 
     .
     ├── docker-compose.yml       # Main Docker Compose configuration
+<<<<<<< HEAD
+=======
+    ├── start.sh                 # Automated setup script
+>>>>>>> 2c81290 (added install script)
     ├── Dockerfile.document-processor # Dockerfile for document processor
     ├── document_processor.py    # Document processing code
     ├── hybrid_search.py         # Hybrid search implementation
@@ -519,3 +656,7 @@ JarvisAI can be extended in several ways:
 
 JarvisAI - A Self-Hosted RAG System with Knowledge Graph
 
+<<<<<<< HEAD
+=======
+Created by [AnubissBE](https://github.com/AnubissBE)
+>>>>>>> 2c81290 (added install script)

@@ -1,7 +1,7 @@
 from neo4j import GraphDatabase
 
 # Try different passwords
-passwords = ["Loebas0128", "neo4j", "password"]
+passwords = ["hahanotmypassword", "neo4j", "password"]
 
 for password in passwords:
     print(f"Trying password: {password}")

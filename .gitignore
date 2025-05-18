@@ -1,0 +1,38 @@
+# Volumes and data directories
+volumes/
+logs/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment files
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Configuration files with potential secrets
+config/kb_default_config.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Milvus files
+volumes/milvus/
+
+# MinIO files
+volumes/minio/
+
+# Processed documents
+volumes/processed_documents/
+
+# Log files
+*.log
+
+# Docker volumes
+docker-volumes/
