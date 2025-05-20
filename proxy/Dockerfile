@@ -12,8 +12,12 @@ COPY . .
 # Expose the proxy port
 EXPOSE 11435
 
-# Command to run the proxy
-CMD ["python", "ollama_proxy.py"]
-# Copy the URL fixer script and run it at startup
+# Copy the URL fixer script
 COPY fix_openwebui_url.py /app/fix_openwebui_url.py
-RUN sed -i 's/python ollama_proxy.py/python fix_openwebui_url.py \&\& python ollama_proxy.py/g' /usr/local/bin/run.sh
+
+# Create a simple run script that fixes the OpenWebUI URL before starting
+RUN printf '#!/bin/sh\npython /app/fix_openwebui_url.py\nexec python /app/ollama_proxy.py\n' > /usr/local/bin/run.sh \
+    && chmod +x /usr/local/bin/run.sh
+
+# Command to run the proxy with the fix applied
+CMD ["/usr/local/bin/run.sh"]
