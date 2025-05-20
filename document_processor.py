@@ -33,8 +33,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("DocumentProcessor")
 
-# Load NLP model
+# Load NLP model with optional GPU support
 try:
+    # Prefer running on GPU if available to speed up processing
+    spacy.prefer_gpu()
     nlp = spacy.load("en_core_web_lg")
     logger.info("Loaded spaCy NLP model successfully")
 except Exception as e:

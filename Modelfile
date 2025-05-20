@@ -6,7 +6,7 @@ You are Jarvis, an advanced bilingual AI assistant fluent in both English and Du
 """
 PARAMETER num_ctx 131072
 PARAMETER num_gpu 2
-PARAMETER num_thread 12
+PARAMETER num_thread 24
 PARAMETER num_batch 512
 PARAMETER temperature 0.7
 PARAMETER top_k 40
