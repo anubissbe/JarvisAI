@@ -9,6 +9,29 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Parse command-line arguments
+SHOW_LOGS=false
+DEBUG_MODE=false
+for arg in "$@"; do
+    case "$arg" in
+        --logs|-l)
+            SHOW_LOGS=true
+            ;;
+        --debug|-d)
+            DEBUG_MODE=true
+            ;;
+    esac
+done
+
+if [ "$DEBUG_MODE" = true ]; then
+    set -o errexit -o pipefail -o xtrace
+    trap 'code=$?; echo -e "${RED}Error on line ${BASH_LINENO[0]}: exit code $code${NC}"' ERR
+fi
+
+if [ "$SHOW_LOGS" = true ]; then
+    docker-compose logs -f
+    exit $?
+fi
 # Print banner
 echo -e "${BLUE}"
 echo " █████  ███    ██ ██    ██ ██████  ██ ███████ ███████ ██████  ███████ "
@@ -220,7 +243,9 @@ setup_jarvis_model() {
     
     # Using local file instead of base64 for better compatibility
     if [ -f Modelfile ]; then
-        modelfile_contents=$(tr '\n' ' ' < Modelfile | sed 's/"/\\"/g')
+        # Preserve newlines when sending the Modelfile to the API
+        # Convert real newlines to the literal \n characters and escape quotes
+        modelfile_contents=$(sed ':a;N;$!ba;s/\n/\\n/g' Modelfile | sed 's/"/\\"/g')
         create_attempts=0
         create_success=false
         while [ $create_attempts -lt 3 ]; do

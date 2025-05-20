@@ -523,6 +523,11 @@ Simply make the script executable and run it:
     ./start.sh
 
 The script will guide you through the entire process with clear, color-coded output.
+You can also run the script with extra options:
+
+    ./start.sh --logs    # View Docker container logs
+    ./start.sh --debug   # Enable verbose output and display error codes
+
 
 ### CPU-Only Mode
 
