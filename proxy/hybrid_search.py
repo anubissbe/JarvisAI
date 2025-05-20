@@ -29,17 +29,21 @@ class HybridSearch:
     def get_embedding(self, text):
         """Get embedding vector for text using Ollama"""
         try:
-            response = requests.get(
-                f"{self.ollama_url}/api/embed",
+            response = requests.post(
+                f"{self.ollama_url}/api/embeddings",
                 json={"model": "nomic-embed-text", "prompt": text},
-                timeout=60
+                timeout=60,
             )
             response.raise_for_status()
             data = response.json()
             return data.get("embedding", [])
+        except requests.RequestException as e:
+            print(f"Embedding request error: {str(e)}")
+        except ValueError as e:
+            print(f"Embedding parse error: {str(e)}")
         except Exception as e:
             print(f"Embedding error: {str(e)}")
-            return []
+        return []
     
     def search_neo4j(self, query_text):
         """Search Neo4j knowledge graph for relevant documents"""
