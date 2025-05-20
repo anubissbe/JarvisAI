@@ -209,9 +209,10 @@ setup_jarvis_model() {
     
     # Using local file instead of base64 for better compatibility
     if [ -f Modelfile ]; then
-        cat Modelfile | curl -X POST "http://localhost:11434/api/create" \
+        modelfile_contents=$(tr '\n' ' ' < Modelfile | sed 's/"/\\"/g')
+        curl -X POST "http://localhost:11434/api/create" \
             -H "Content-Type: application/json" \
-            -d '{"name": "jarvis", "modelfile": "'"$(cat Modelfile | sed 's/"/\\"/g' | tr '\n' ' ')"'"}'
+            -d "{\"name\": \"jarvis\", \"modelfile\": \"${modelfile_contents}\"}"
         
         echo -e "\n${GREEN}Jarvis model creation initiated. This may take some time to complete.${NC}"
     else

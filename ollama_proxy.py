@@ -1,9 +1,34 @@
 from flask import Flask, request, jsonify
+import os
 import requests
 from hybrid_search import HybridSearch
 
 app = Flask(__name__)
-hybrid_search = HybridSearch()
+
+# Read connection details from environment variables with sensible defaults
+NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
+NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "VerySecurePassword")
+MILVUS_HOST = os.environ.get("MILVUS_HOST", "milvus-standalone")
+MILVUS_PORT = os.environ.get("MILVUS_PORT", "19530")
+OLLAMA_API_BASE_URL = os.environ.get("OLLAMA_API_BASE_URL", "http://ollama:11434")
+
+# Initialize HybridSearch with the configured connection parameters. If any of
+# the services are unavailable the proxy should still start, so wrap creation in
+# a try/except block.
+try:
+    hybrid_search = HybridSearch(
+        neo4j_uri=NEO4J_URI,
+        neo4j_user=NEO4J_USER,
+        neo4j_password=NEO4J_PASSWORD,
+        milvus_host=MILVUS_HOST,
+        milvus_port=MILVUS_PORT,
+        ollama_url=OLLAMA_API_BASE_URL,
+    )
+except Exception as exc:
+    # Log the error and fall back to a minimal proxy without search capability
+    print(f"Failed to initialise HybridSearch: {exc}")
+    hybrid_search = None
 
 @app.route('/api/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def proxy(path):
@@ -15,15 +40,23 @@ def proxy(path):
         return jsonify({"message": {"content": "This is a placeholder response since hybrid search is being fixed."}})
     
     # For all other requests, pass through to Ollama
-    url = f"http://ollama:11434/api/{path}"
+    url = f"{OLLAMA_API_BASE_URL}/api/{path}"
     print(f"Proxying request to: {url} (Method: {request.method})")
-    
-    # Forward the request
-    if request.method == 'GET':
-        resp = requests.get(url, params=request.args)
-    else:
-        resp = requests.post(url, json=request.json)
-    
+
+    headers = {k: v for k, v in request.headers if k.lower() != 'host'}
+    try:
+        resp = requests.request(
+            method=request.method,
+            url=url,
+            params=request.args,
+            json=request.get_json(silent=True),
+            headers=headers,
+            timeout=300,
+        )
+    except requests.RequestException as exc:
+        print(f"Request to Ollama failed: {exc}")
+        return jsonify({"error": "Failed to contact Ollama"}), 502
+
     print(f"Response from {url}: status {resp.status_code}")
     return resp.content, resp.status_code, resp.headers.items()
 
