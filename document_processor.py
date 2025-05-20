@@ -35,6 +35,11 @@ import re
 import json
 import traceback
 import uuid
+try:
+    from pymilvus import Collection, utility
+except ImportError:  # pragma: no cover - optional dependency
+    Collection = None
+    utility = None
 
 # Add the hybrid_search directory to the path
 sys.path.append('/opt/jarvis/hybrid_search')
@@ -901,6 +906,37 @@ class DocumentProcessor:
             logger.error(f"Error adding personal knowledge to Neo4j: {str(e)}")
             logger.error(traceback.format_exc())
             return False
+
+    def add_vector_to_milvus(self, title, path, content, kb_id, embedding):
+        """Insert document embedding and metadata into Milvus"""
+        if Collection is None or utility is None or not self.searcher:
+            logger.warning("Milvus not available; skipping vector insertion")
+            return
+
+        try:
+            collection_name = f"documents_{kb_id.replace('-', '_')}"
+
+            # Create collection if it doesn't exist
+            if not utility.has_collection(collection_name):
+                self.searcher._initialize_vector_collection(kb_id)
+
+            collection = Collection(collection_name)
+            collection.load()
+
+            data = [
+                [title],
+                [path],
+                [content],
+                [kb_id],
+                [embedding],
+            ]
+            collection.insert(data)
+            collection.flush()
+            collection.release()
+            logger.info(f"Inserted vector for {title} into Milvus collection {collection_name}")
+        except Exception as e:
+            logger.error(f"Error inserting vector into Milvus: {str(e)}")
+            logger.error(traceback.format_exc())
     
     def process_document(self, file_path):
         """Process a document and add its knowledge to Neo4j"""
@@ -931,6 +967,13 @@ class DocumentProcessor:
                 logger.error(f"Failed to extract text from document: {document_title}")
                 return False
             
+            # Generate vector embedding and store in Milvus
+            embedding = None
+            if self.searcher:
+                embedding = self.searcher._get_embedding(text)
+            if embedding:
+                self.add_vector_to_milvus(document_title, file_path, text, kb_id, embedding)
+
             # Extract technical knowledge (original functionality)
             technical_knowledge = self.extract_knowledge(text, document_title)
             
