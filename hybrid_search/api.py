@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from hybrid_search import HybridSearch
+import requests
 
 app = Flask(__name__)
 

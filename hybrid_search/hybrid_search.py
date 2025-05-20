@@ -43,10 +43,15 @@ class HybridSearch:
         # Ollama connection for embeddings
         self.ollama_url = ollama_url
         self.model = "nomic-embed-text"
-        
+
         # Cache for available knowledge bases
         self.kb_cache = {}
         self.refresh_kb_cache()
+
+    def get_timestamp(self):
+        """Return an ISO formatted timestamp."""
+        from datetime import datetime
+        return datetime.now().isoformat()
     
     def refresh_kb_cache(self):
         """Refresh the cache of available knowledge bases"""
