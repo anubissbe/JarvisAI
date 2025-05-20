@@ -197,9 +197,20 @@ setup_jarvis_model() {
     
     # Pull base model first
     echo -e "${YELLOW}Pulling llama3.1:8b base model...${NC}"
-    curl -X POST "http://localhost:11434/api/pull" \
-        -H "Content-Type: application/json" \
-        -d '{"name": "llama3.1:8b"}'
+    pull_attempts=0
+    pull_success=false
+    while [ $pull_attempts -lt 3 ]; do
+        curl -f -X POST "http://localhost:11434/api/pull" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "llama3.1:8b"}' && pull_success=true && break
+        echo -e "${RED}Failed to pull llama3.1:8b (attempt $((pull_attempts+1)))${NC}"
+        pull_attempts=$((pull_attempts+1))
+        sleep 5
+    done
+    if [ "$pull_success" != true ]; then
+        echo -e "${RED}Unable to pull llama3.1:8b after $pull_attempts attempts.${NC}"
+        return 1
+    fi
     
     # Wait a moment for the pull to start
     sleep 5
@@ -210,11 +221,22 @@ setup_jarvis_model() {
     # Using local file instead of base64 for better compatibility
     if [ -f Modelfile ]; then
         modelfile_contents=$(tr '\n' ' ' < Modelfile | sed 's/"/\\"/g')
-        curl -X POST "http://localhost:11434/api/create" \
-            -H "Content-Type: application/json" \
-            -d "{\"name\": \"jarvis\", \"modelfile\": \"${modelfile_contents}\"}"
-        
-        echo -e "\n${GREEN}Jarvis model creation initiated. This may take some time to complete.${NC}"
+        create_attempts=0
+        create_success=false
+        while [ $create_attempts -lt 3 ]; do
+            curl -f -s -X POST "http://localhost:11434/api/create" \
+                -H "Content-Type: application/json" \
+                -d "{\"name\": \"jarvis\", \"modelfile\": \"${modelfile_contents}\"}" && create_success=true && break
+            echo -e "\n${RED}Failed to create Jarvis model (attempt $((create_attempts+1))).${NC}"
+            create_attempts=$((create_attempts+1))
+            sleep 5
+        done
+        if [ "$create_success" = true ]; then
+            echo -e "\n${GREEN}Jarvis model creation initiated. This may take some time to complete.${NC}"
+        else
+            echo -e "\n${RED}Unable to create Jarvis model after $create_attempts attempts.${NC}"
+            return 1
+        fi
     else
         echo -e "\n${RED}Modelfile not found. Make sure it exists in the current directory.${NC}"
         return 1
