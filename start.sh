@@ -220,7 +220,9 @@ setup_jarvis_model() {
     
     # Using local file instead of base64 for better compatibility
     if [ -f Modelfile ]; then
-        modelfile_contents=$(tr '\n' ' ' < Modelfile | sed 's/"/\\"/g')
+        # Preserve newlines when sending the Modelfile to the API
+        # Convert real newlines to the literal \n characters and escape quotes
+        modelfile_contents=$(sed ':a;N;$!ba;s/\n/\\n/g' Modelfile | sed 's/"/\\"/g')
         create_attempts=0
         create_success=false
         while [ $create_attempts -lt 3 ]; do
