@@ -2,12 +2,31 @@
 import os
 import time
 import hashlib
-import spacy
-import PyPDF2
-import pytextract
-from neo4j import GraphDatabase
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+try:
+    import spacy
+except ImportError:  # pragma: no cover - optional dependency
+    spacy = None
+
+try:
+    import PyPDF2
+except ImportError:  # pragma: no cover - optional dependency
+    PyPDF2 = None
+
+try:
+    import pytextract
+except ImportError:  # pragma: no cover - optional dependency
+    pytextract = None
+
+try:
+    from neo4j import GraphDatabase
+except ImportError:  # pragma: no cover - optional dependency
+    GraphDatabase = None
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
+except ImportError:  # pragma: no cover - optional dependency
+    Observer = None
+    FileSystemEventHandler = object
 import logging
 from datetime import datetime
 import sys
@@ -20,7 +39,10 @@ import uuid
 # Add the hybrid_search directory to the path
 sys.path.append('/opt/jarvis/hybrid_search')
 # Assuming hybrid_search has methods for accessing the vector DB
-from hybrid_search import HybridSearch  
+from hybrid_search import HybridSearch
+
+# Ensure log directory exists
+os.makedirs("/var/log/jarvis", exist_ok=True)
 
 # Configure logging
 logging.basicConfig(
@@ -34,16 +56,24 @@ logging.basicConfig(
 logger = logging.getLogger("DocumentProcessor")
 
 # Load NLP model with optional GPU support
-try:
-    # Prefer running on GPU if available to speed up processing
-    spacy.prefer_gpu()
-    nlp = spacy.load("en_core_web_lg")
-    logger.info("Loaded spaCy NLP model successfully")
-except Exception as e:
-    logger.error(f"Error loading spaCy model: {str(e)}")
-    logger.error("Installing model...")
-    os.system("python -m spacy download en_core_web_lg")
-    nlp = spacy.load("en_core_web_lg")
+if spacy is not None:
+    try:
+        # Prefer running on GPU if available
+        spacy.prefer_gpu()
+        nlp = spacy.load("en_core_web_lg")
+        logger.info("Loaded spaCy NLP model successfully")
+    except Exception as e:
+        logger.error(f"Error loading spaCy model: {str(e)}")
+        # Fallback to a minimal model if available
+        try:
+            nlp = spacy.load("en_core_web_sm")
+            logger.info("Loaded fallback spaCy model")
+        except Exception:
+            logger.warning("spaCy models unavailable, using blank English model")
+            nlp = spacy.blank("en")
+else:
+    logger.warning("spaCy library not installed; text processing features disabled")
+    nlp = None
 
 class DocumentProcessor:
     def __init__(self):
@@ -59,15 +89,19 @@ class DocumentProcessor:
         os.makedirs(self.processed_dir, exist_ok=True)
         os.makedirs(self.config_dir, exist_ok=True)
         
-        # Connect to Neo4j
-        try:
-            self.driver = GraphDatabase.driver(
-                self.neo4j_uri, 
-                auth=(self.neo4j_user, self.neo4j_password)
-            )
-            logger.info(f"Connected to Neo4j at {self.neo4j_uri}")
-        except Exception as e:
-            logger.error(f"Failed to connect to Neo4j: {str(e)}")
+        # Connect to Neo4j if available
+        if GraphDatabase is not None:
+            try:
+                self.driver = GraphDatabase.driver(
+                    self.neo4j_uri,
+                    auth=(self.neo4j_user, self.neo4j_password)
+                )
+                logger.info(f"Connected to Neo4j at {self.neo4j_uri}")
+            except Exception as e:
+                logger.error(f"Failed to connect to Neo4j: {str(e)}")
+                self.driver = None
+        else:
+            logger.warning("neo4j library not installed; graph features disabled")
             self.driver = None
             
         # Initialize hybrid search module for vector DB operations
@@ -147,6 +181,9 @@ class DocumentProcessor:
     def extract_text_from_pdf(self, file_path):
         """Extract text content from a PDF file"""
         text = ""
+        if PyPDF2 is None:
+            logger.warning("PyPDF2 not available, skipping PDF extraction")
+            return text
         try:
             with open(file_path, 'rb') as file:
                 reader = PyPDF2.PdfReader(file)
@@ -177,6 +214,9 @@ class DocumentProcessor:
                     return ""
         else:
             # For other document types, use pytextract
+            if pytextract is None:
+                logger.warning("pytextract not available, cannot handle file: %s", file_path)
+                return ""
             try:
                 return pytextract.process(file_path).strip()
             except Exception as e:
@@ -187,19 +227,20 @@ class DocumentProcessor:
         """Extract entities, concepts, and relationships from text"""
         logger.info(f"Extracting knowledge from document: {document_title}")
         
-        # Process the text with spaCy
-        doc = nlp(text[:100000])  # Limit to avoid memory issues with large docs
+        # Process the text with spaCy if available
+        doc = nlp(text[:100000]) if nlp else None  # Limit to avoid memory issues
         
         # Extract entities
         entities = []
-        for ent in doc.ents:
-            if ent.label_ in ["PERSON", "ORG", "GPE", "PRODUCT", "EVENT", "LAW", "WORK_OF_ART"]:
-                entities.append({
-                    "text": ent.text,
-                    "label": ent.label_,
-                    "start": ent.start_char,
-                    "end": ent.end_char
-                })
+        if doc is not None:
+            for ent in doc.ents:
+                if ent.label_ in ["PERSON", "ORG", "GPE", "PRODUCT", "EVENT", "LAW", "WORK_OF_ART"]:
+                    entities.append({
+                        "text": ent.text,
+                        "label": ent.label_,
+                        "start": ent.start_char,
+                        "end": ent.end_char
+                    })
         
         # Extract key phrases and topics
         topics = []
@@ -316,8 +357,8 @@ class DocumentProcessor:
         """Extract personal information, categories, and relationships from text"""
         logger.info(f"Extracting personal knowledge from document: {document_title}")
         
-        # Process the text with spaCy
-        doc = nlp(text[:100000])  # Limit to avoid memory issues with large docs
+        # Process the text with spaCy if available
+        doc = nlp(text[:100000]) if nlp else None  # Limit to avoid memory issues with large docs
         
         # Initialize results
         personal_entities = []
@@ -1058,18 +1099,23 @@ def main():
     
     # Set up file watcher
     event_handler = FileEventHandler(processor)
-    observer = Observer()
+    if Observer is None:
+        logger.warning("watchdog not available; directory monitoring disabled")
+        observer = None
+    else:
+        observer = Observer()
     
     # Watch the uploads directory
-    try:
-        logger.info(f"Attempting to watch directory: {processor.uploads_dir}")
-        observer.schedule(event_handler, processor.uploads_dir, recursive=True)
-        observer.start()
-        logger.info(f"Now watching for new documents in {processor.uploads_dir}")
-    except Exception as e:
-        logger.error(f"Failed to start directory observer: {str(e)}")
-        logger.error(traceback.format_exc())
-        return
+    if observer:
+        try:
+            logger.info(f"Attempting to watch directory: {processor.uploads_dir}")
+            observer.schedule(event_handler, processor.uploads_dir, recursive=True)
+            observer.start()
+            logger.info(f"Now watching for new documents in {processor.uploads_dir}")
+        except Exception as e:
+            logger.error(f"Failed to start directory observer: {str(e)}")
+            logger.error(traceback.format_exc())
+            return
     
     # Keep the main thread running
     try:
@@ -1078,12 +1124,14 @@ def main():
             time.sleep(1)
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received, stopping service")
-        observer.stop()
+        if observer:
+            observer.stop()
     except Exception as e:
         logger.error(f"Error in main loop: {str(e)}")
         logger.error(traceback.format_exc())
     
-    observer.join()
+    if observer:
+        observer.join()
     logger.info("Document Processor service stopped")
 
 
