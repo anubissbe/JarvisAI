@@ -123,7 +123,7 @@ class HybridSearch:
         api_url = "http://open-webui:8080/api/v1/knowledge/query"
         
         try:
-            response = requests.get(
+            response = requests.post(
                 api_url,
                 json={
                     "query": query_text,
