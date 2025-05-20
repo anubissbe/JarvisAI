@@ -23,6 +23,7 @@ except ImportError:  # pragma: no cover - optional dependency
     connections = Collection = utility = None
 import json
 import traceback
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -33,20 +34,32 @@ logger = logging.getLogger("HybridSearch")
 
 class HybridSearch:
     def __init__(self, neo4j_uri, neo4j_user, neo4j_password, milvus_host, milvus_port, ollama_url):
-        # Neo4j connection
+        # Neo4j connection with retries in case the database is not ready yet
+        self.driver = None
         if GraphDatabase is not None:
-            try:
-                self.driver = GraphDatabase.driver(
-                    neo4j_uri,
-                    auth=(neo4j_user, neo4j_password)
-                )
-                logger.info(f"Connected to Neo4j at {neo4j_uri}")
-            except Exception as e:
-                logger.error(f"Failed to connect to Neo4j: {str(e)}")
-                self.driver = None
+            max_retries = int(os.environ.get("NEO4J_MAX_RETRIES", "10"))
+            retry_delay = int(os.environ.get("NEO4J_RETRY_DELAY", "3"))
+            for attempt in range(1, max_retries + 1):
+                try:
+                    self.driver = GraphDatabase.driver(
+                        neo4j_uri,
+                        auth=(neo4j_user, neo4j_password)
+                    )
+                    with self.driver.session() as session:
+                        session.run("RETURN 1")
+                    logger.info(f"Connected to Neo4j at {neo4j_uri}")
+                    break
+                except Exception as e:
+                    logger.error(
+                        f"Neo4j connection attempt {attempt}/{max_retries} failed: {str(e)}"
+                    )
+                    self.driver = None
+                    if attempt < max_retries:
+                        time.sleep(retry_delay)
+            if self.driver is None:
+                logger.error("Exceeded maximum Neo4j connection retries; graph features disabled")
         else:
             logger.warning("neo4j library not installed; graph features disabled")
-            self.driver = None
 
         # Milvus connection
         if connections is not None:
