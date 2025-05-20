@@ -81,6 +81,9 @@ class DocumentProcessor:
         self.neo4j_uri = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
         self.neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
         self.neo4j_password = os.environ.get("NEO4J_PASSWORD", "VerySecurePassword")
+        self.milvus_host = os.environ.get("MILVUS_HOST", "milvus-standalone")
+        self.milvus_port = os.environ.get("MILVUS_PORT", "19530")
+        self.ollama_url = os.environ.get("OLLAMA_URL", "http://ollama:11434")
         self.uploads_dir = os.environ.get("UPLOADS_DIR", "/app/backend/data/uploads")
         self.processed_dir = os.environ.get("PROCESSED_DIR", "/processed")
         self.config_dir = os.environ.get("CONFIG_DIR", "/app/config")
@@ -110,9 +113,9 @@ class DocumentProcessor:
                 neo4j_uri=self.neo4j_uri,
                 neo4j_user=self.neo4j_user,
                 neo4j_password=self.neo4j_password,
-                milvus_host="milvus-standalone",
-                milvus_port="19530",
-                ollama_url="http://ollama:11434"
+                milvus_host=self.milvus_host,
+                milvus_port=self.milvus_port,
+                ollama_url=self.ollama_url
             )
             logger.info("Initialized HybridSearch module")
         except Exception as e:

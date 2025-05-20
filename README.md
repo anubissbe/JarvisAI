@@ -7,14 +7,14 @@ JarvisAI is a powerful self-hosted Retrieval-Augmented Generation (RAG) system t
 
 ### 🚀 Quick Start
 
-To get started with JarvisAI, simply run:
+To get started with JarvisAI on a fresh Ubuntu 22.04 server, run:
 
     git clone https://github.com/AnubissBE/jarvisai.git
     cd jarvisai
     chmod +x start.sh
     ./start.sh
 
-The start.sh script will automatically check requirements, install dependencies, and launch the complete JarvisAI system.
+The `start.sh` script installs Docker if needed and launches all containers in one go. No additional configuration is required.
 
 
 
@@ -182,10 +182,10 @@ JarvisAI has the following hardware and software requirements:
 
 ### Hardware Requirements
 
-*   NVIDIA GPUs (2× V100 recommended) for optimal performance
-*   Minimum 32GB RAM (64GB recommended)
-*   100GB+ storage space
-*   Fast internet connection for model downloads
+*   Two NVIDIA V100 GPUs (16GB each)
+*   Dual Xeon CPUs
+*   256GB RAM
+*   10TB of storage
 
 ### Software Requirements
 
@@ -300,8 +300,15 @@ Configuration
 
 The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.env`. Key configuration options include:
 
+#### Database Connection Settings
+
+* `NEO4J_URI` – address of the Neo4j database
+* `NEO4J_USER` / `NEO4J_PASSWORD` – credentials for Neo4j
+* `MILVUS_HOST` / `MILVUS_PORT` – location of the Milvus vector store
+
 #### Ollama Settings
 
+* `OLLAMA_URL` – base URL for the Ollama API
 *   `OLLAMA_NUM_PARALLEL`: Number of parallel requests allowed (default: 4)
 *   `OLLAMA_MAX_LOADED_MODELS`: Maximum models to keep loaded (default: 2)
 *   `OLLAMA_CONTEXT_LENGTH`: Maximum context length (default: 262144)
@@ -346,7 +353,7 @@ The LLM is configured in the `Modelfile`. You can modify this file to change LLM
 For systems with two NVIDIA V100 GPUs and high core-count CPUs, adjust the following settings for best performance:
 
 * `OLLAMA_NUM_THREADS=24` in `docker-compose.yml` to match the available CPU threads.
-* `WEBUI_WORKERS=12` in `docker-compose.yml` for improved concurrency in the web interface.
+* `WEBUI_WORKERS=24` in `docker-compose.yml` for improved concurrency in the web interface.
 * `num_thread 24` in the `Modelfile` to fully utilise the CPU when generating responses.
 
 These values can be tweaked further depending on your exact workload and resource availability.
