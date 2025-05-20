@@ -331,7 +331,8 @@ start_jarvisai() {
     else
         echo -e "${YELLOW}Starting in CPU-only mode (performance will be limited)...${NC}"
         # Remove GPU-specific configurations when running without GPU
-        sed 's/driver: nvidia/driver: none/g' docker-compose.yml > docker-compose-cpu.yml
+        # Strip GPU-specific settings for CPU-only environments
+        sed '/driver: nvidia/d;/capabilities: \[gpu\]/d;/count: .*/d' docker-compose.yml > docker-compose-cpu.yml
         docker-compose -f docker-compose-cpu.yml up -d
     fi
     
