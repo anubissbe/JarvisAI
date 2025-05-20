@@ -1,9 +1,15 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context
+import logging
 import os
 import requests
 from hybrid_search import HybridSearch
 
 app = Flask(__name__)
+
+# Configure logging
+log_level = os.environ.get("LOG_LEVEL", "info").upper()
+logging.basicConfig(level=getattr(logging, log_level, logging.INFO))
+logger = logging.getLogger("ollama_proxy")
 
 # Connection details from environment variables
 NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
@@ -23,38 +29,74 @@ try:
         ollama_url=OLLAMA_API_BASE_URL,
     )
 except Exception as exc:
-    print(f"Failed to initialise HybridSearch: {exc}")
+    logger.error("Failed to initialise HybridSearch: %s", exc)
     hybrid_search = None
 
 @app.route('/api/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def proxy(path):
-    print(f"Received request for /api/{path} (Method: {request.method})")
-    
-    # For chat requests, use hybrid search
-    if path == 'chat':
-        print(f"Processing chat request")
-        return jsonify({"message": {"content": "This is a placeholder response since hybrid search is being fixed."}})
-    
-    # For all other requests, pass through to Ollama
+    logger.info("Received request for /api/%s (Method: %s)", path, request.method)
+
+    data = request.get_json(silent=True)
+
+    # For chat requests, augment with hybrid search context
+    if path == 'chat' and data is not None and hybrid_search is not None:
+        logger.info("Processing chat request via hybrid search")
+
+        # Extract latest user message
+        user_message = ""
+        messages = data.get("messages", [])
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                user_message = msg.get("content", "")
+                break
+
+        kb_id = (
+            data.get("knowledge_base_id")
+            or data.get("kb_id")
+            or data.get("knowledge_id")
+            or os.environ.get("DEFAULT_KB_ID")
+        )
+
+        if user_message and kb_id:
+            try:
+                results = hybrid_search.hybrid_search(user_message, kb_id, top_k=3)
+                context_parts = [r.get("content", "") for r in results if r.get("content")]
+                if context_parts:
+                    options = data.setdefault("options", {})
+                    existing = options.get("system", "")
+                    context = "\n\n".join(context_parts)
+                    options["system"] = f"{existing}\n\nContext:\n{context}".strip()
+                    logger.info("Added %d context snippets to system prompt", len(context_parts))
+            except Exception as exc:
+                logger.error("Hybrid search failed: %s", exc)
+
+    # Pass through to Ollama for all requests
     url = f"{OLLAMA_API_BASE_URL}/api/{path}"
-    print(f"Proxying request to: {url} (Method: {request.method})")
+    logger.info("Proxying request to: %s (Method: %s)", url, request.method)
 
     headers = {k: v for k, v in request.headers if k.lower() != 'host'}
     try:
+        timeout = int(os.environ.get("REQUEST_TIMEOUT", "300"))
         resp = requests.request(
             method=request.method,
             url=url,
             params=request.args,
-            json=request.get_json(silent=True),
+            json=data,
             headers=headers,
-            timeout=300,
+            stream=True,
+            timeout=timeout,
         )
     except requests.RequestException as exc:
-        print(f"Request to Ollama failed: {exc}")
+        logger.error("Request to Ollama failed: %s", exc)
         return jsonify({"error": "Failed to contact Ollama"}), 502
 
-    print(f"Response from {url}: status {resp.status_code}")
-    return resp.content, resp.status_code, resp.headers.items()
+    logger.info("Response from %s: status %s", url, resp.status_code)
+
+    return Response(
+        stream_with_context(resp.iter_content(chunk_size=8192)),
+        status=resp.status_code,
+        headers=dict(resp.headers),
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
