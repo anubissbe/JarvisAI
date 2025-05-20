@@ -1,0 +1,254 @@
+version: '3.9'
+services:
+  # Ollama service - Language Model server running on V100 GPUs with optimized performance
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ./ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    environment:
+      # GPU configuration
+      - OLLAMA_MODEL_PATH=/root/.ollama/models
+      - CUDA_VISIBLE_DEVICES=0,1
+      - OLLAMA_GPU_LAYERS=28
+      # Performance optimization
+      - OLLAMA_NUM_THREADS=16                     # Optimize CPU thread usage for preprocessing
+      - OLLAMA_HOST=0.0.0.0                       # Listen on all interfaces
+      - OLLAMA_KEEP_ALIVE=5m                      # Keep models loaded for 5 minutes after last use
+      - OLLAMA_COMPUTE_BUDGET=0                   # Auto-determine compute budget
+      # Memory management and lazy loading
+      - OLLAMA_LAZY_LOADING=true                  # Enable lazy loading of model weights
+      - OLLAMA_CACHE_LIMIT=16000                  # Limit RAM cache to 16GB
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 24G                            # Limit container memory usage
+        reservations:
+          memory: 8G                             # Reserve minimum memory
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      memlock: -1                               # Prevent memory from being swapped to disk
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - jarvis-net
+    shm_size: 16g                              # Increase shared memory size
+
+  # OpenWebUI service - Web interface with RAG capabilities
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:cuda
+    container_name: open-webui
+    depends_on:
+      - ollama
+      - milvus-standalone
+      - ollama-proxy
+    volumes:
+      - open-webui-data:/app/backend/data
+    ports:
+      - "3000:8080"
+    environment:
+      # Base Configuration
+      - OLLAMA_BASE_URL=http://ollama-proxy:11435
+      - WEBUI_AUTH=True
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-your_secure_secret_key_here}
+
+      # RAG Configuration
+      - ENABLE_RAG=True
+      - VECTOR_DB=milvus
+      - MILVUS_URI=http://milvus-standalone:19530
+      - MILVUS_DB=default
+      - MILVUS_TOKEN=root:Milvus
+      - MILVUS_INDEX_TYPE=HNSW
+      - MILVUS_METRIC_TYPE=COSINE
+
+      # Embedding Configuration
+      - EMBEDDING_MODEL=nomic-embed-text
+      - EMBEDDING_PROVIDER=ollama
+      - EMBEDDING_MODEL_ENDPOINT=http://ollama:11434
+      - EMBEDDING_DIMENSIONS=768
+      - EMBEDDING_BATCH_SIZE=64
+      # Performance optimizations
+      - WEBUI_WORKERS=4
+    networks:
+      - jarvis-net
+
+  # Ollama Proxy with Neo4j integration
+  ollama-proxy:
+    build: ./proxy
+    container_name: ollama-proxy
+    depends_on:
+      - ollama
+      - neo4j
+    ports:
+      - "11435:11435"
+    volumes:
+      - ./hybrid_search:/opt/jarvis/hybrid_search
+      - ./proxy:/app
+    environment:
+      - NEO4J_PASSWORD=VerySecurePassword
+      - NEO4J_URI=bolt://neo4j:7687
+      - OLLAMA_API_BASE_URL=http://ollama:11434
+      - LOG_LEVEL=info
+      - REQUEST_TIMEOUT=300
+      - GRAPH_CACHE_SIZE=1000
+      - HYBRID_SEARCH_BUFFER_SIZE=128
+    restart: unless-stopped
+    networks:
+      - jarvis-net
+
+  # Neo4j service - MINIMAL configuration
+  neo4j:
+    image: neo4j:2025.04.0
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/VerySecurePassword
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+      - neo4j-import:/import
+      - neo4j-plugins:/plugins
+    restart: unless-stopped
+    networks:
+      - jarvis-net
+
+  # Milvus service - Vector database for embeddings storage
+  milvus-standalone:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.3.3
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      # Performance tuning
+      COMMON_STORAGE_TYPE: minio
+      COMMON_GRACEFUL_TIME: 120
+      DATACOORD_SEGMENT_MAX_SIZE: 4096MB
+      QUERYCOORD_SEARCH_BUFFER_SIZE: 512MB
+      QUERY_NODE_CACHE_SIZE: 16GB
+      ROCKSMQ_MESSAGE_SIZE: 128MB
+      PULSAR_BUFFER_SIZE: 256MB
+      PULSAR_MAX_MESSAGE_SIZE: 32MB
+    volumes:
+      - milvus-data:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - etcd
+      - minio
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - jarvis-net
+    shm_size: 16gb
+
+  # etcd - Metadata storage for Milvus
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.5
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=8589934592
+      - ETCD_MAX_REQUEST_BYTES=33554432
+      - ETCD_SNAPSHOT_COUNT=10000
+    volumes:
+      - etcd-data:/etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379
+    restart: unless-stopped
+    networks:
+      - jarvis-net
+
+  # MinIO - Object storage for Milvus
+  minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BROWSER: "on"
+      MINIO_PROMETHEUS_AUTH_TYPE: "public"
+      MINIO_REGION: "eu-west-1"
+      MINIO_DOMAIN: "minio"
+      # Performance tuning
+      MINIO_COMPRESS: "off"
+      MINIO_COMPRESS_EXTENSIONS: ""
+      MINIO_COMPRESS_MIME_TYPES: ""
+    volumes:
+      - minio-data:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    restart: unless-stopped
+    networks:
+      - jarvis-net
+
+  # Document processor service
+  document-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile.document-processor
+    container_name: document-processor
+    volumes:
+      - ./volumes/processed_documents:/processed
+      - open-webui-data:/app/backend/data
+      - ./hybrid_search:/opt/jarvis/hybrid_search
+      - ./logs:/var/log/jarvis
+      - ./tmp:/tmp/jarvis_sessions
+      - ./config:/app/config
+    env_file:
+      - ./jarvis_kb_config.env
+    environment:
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=VerySecurePassword
+      - MILVUS_HOST=milvus-standalone
+      - MILVUS_PORT=19530
+      - EMBEDDING_ENDPOINT=http://ollama:11434
+      - EMBEDDING_MODEL=nomic-embed-text
+      - LOG_LEVEL=info
+      - DOCUMENT_CHUNK_SIZE=1536
+      - DOCUMENT_CHUNK_OVERLAP=256
+      - PROCESSING_BATCH_SIZE=16
+    networks:
+      - jarvis-net
+
+# Persistence layer - Volumes for data storage
+volumes:
+  open-webui-data:
+  neo4j-data:
+  neo4j-logs:
+  neo4j-import:
+  neo4j-plugins:
+  milvus-data:
+  etcd-data:
+  minio-data:
+
+networks:
+  jarvis-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
