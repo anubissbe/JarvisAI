@@ -317,14 +317,24 @@ The LLM is configured in the `Modelfile`. You can modify this file to change LLM
     """
     PARAMETER num_ctx 131072
     PARAMETER num_gpu 2
-    PARAMETER num_thread 12
+    PARAMETER num_thread 24
     PARAMETER num_batch 512
     PARAMETER temperature 0.7
     PARAMETER top_k 40
     PARAMETER top_p 0.9
     PARAMETER repeat_penalty 1.1
-    
+
     TEMPLATE """{{ if .System }}<|start_header_id|>system<|end_header_id|> {{ .System }} <|eot_id|>{{ end }}{{ if .Prompt }}<|start_header_id|>user<|end_header_id|> {{ .Prompt }} <|eot_id|>{{ end }}<|start_header_id|>assistant<|end_header_id|> {{ .Response }} <|eot_id|>"""
+
+#### Optimizing for Dual V100 GPUs
+
+For systems with two NVIDIA V100 GPUs and high core-count CPUs, adjust the following settings for best performance:
+
+* `OLLAMA_NUM_THREADS=24` in `docker-compose.yml` to match the available CPU threads.
+* `WEBUI_WORKERS=12` in `docker-compose.yml` for improved concurrency in the web interface.
+* `num_thread 24` in the `Modelfile` to fully utilise the CPU when generating responses.
+
+These values can be tweaked further depending on your exact workload and resource availability.
 
 Usage
 -----

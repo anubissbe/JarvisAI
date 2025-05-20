@@ -12,7 +12,7 @@ services:
     environment:
       - OLLAMA_MODEL_PATH=/root/.ollama/models
       - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_NUM_THREADS=16
+      - OLLAMA_NUM_THREADS=24
       - OLLAMA_KEEP_ALIVE=10m  
       - OLLAMA_GPU_LAYERS=32    # This may work as an environment variable even if not as a model parameter
       - OLLAMA_PARALLEL=2       # This may work as an environment variable
@@ -64,7 +64,7 @@ services:
       - EMBEDDING_DIMENSIONS=768
       - EMBEDDING_BATCH_SIZE=64
       # Performance optimizations
-      - WEBUI_WORKERS=4
+      - WEBUI_WORKERS=12
     networks:
       - jarvis-net
 
