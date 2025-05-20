@@ -5,7 +5,6 @@ JarvisAI is a powerful self-hosted Retrieval-Augmented Generation (RAG) system t
 
 **Note:** JarvisAI is designed to run on systems with NVIDIA GPUs (particularly V100) for optimal performance.
 
-=======
 ### 🚀 Quick Start
 
 To get started with JarvisAI, simply run:
@@ -17,9 +16,6 @@ To get started with JarvisAI, simply run:
 
 The start.sh script will automatically check requirements, install dependencies, and launch the complete JarvisAI system.
 
-**Note:** JarvisAI is designed to run on systems with NVIDIA GPUs (particularly V100) for optimal performance.
-
-User OpenWebUI Ollama Proxy Ollama LLM Document Processor Neo4j Milvus etcd/MinIO Document Storage & Knowledge Base Legend Services Graph DB Vector DB
 
 
 Table of Contents
@@ -197,6 +193,7 @@ JarvisAI has the following hardware and software requirements:
 *   Docker and Docker Compose (v2.x+)
 *   NVIDIA Container Toolkit (for GPU access in containers)
 *   Git (for repository cloning)
+*   Python 3.10 or newer (for the document processor)
 
 Installation
 ------------
@@ -638,7 +635,4 @@ JarvisAI can be extended in several ways:
 *   Integrating with other LLM providers
 *   Adding visualization capabilities for the knowledge graph
 
-JarvisAI - A Self-Hosted RAG System with Knowledge Graph
-
-=======
 Created by [AnubissBE](https://github.com/AnubissBE)

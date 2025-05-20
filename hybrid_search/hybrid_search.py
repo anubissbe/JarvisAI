@@ -155,8 +155,8 @@ class HybridSearch:
                       'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don',
                       'should', 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren',
                       'couldn', 'didn', 'doesn', 'hadn', 'hasn', 'haven', 'isn', 'ma',
-                      'mightn', 'mustn', 'needn', 'shan', 'shouldn', 'wasn', 'weren', 'won',
-                      'wouldn', 'I', 'you', 'he', 'she', 'it', 'we', 'they', 'what', 'who'}
+                     'mightn', 'mustn', 'needn', 'shan', 'shouldn', 'wasn', 'weren', 'won',
+                     'wouldn', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'what', 'who'}
         
         terms = [word for word in words if word not in stop_words and len(word) > 2]
         
