@@ -218,7 +218,19 @@ class DocumentProcessor:
                 logger.warning("pytextract not available, cannot handle file: %s", file_path)
                 return ""
             try:
-                return pytextract.process(file_path).strip()
+                raw_content = pytextract.process(file_path)
+                try:
+                    text = (
+                        raw_content.decode("utf-8", errors="ignore")
+                        if isinstance(raw_content, (bytes, bytearray))
+                        else str(raw_content)
+                    )
+                    return text.strip()
+                except Exception as decode_error:
+                    logger.error(
+                        f"Error decoding extracted text: {str(decode_error)}"
+                    )
+                    return ""
             except Exception as e:
                 logger.error(f"Error extracting text with pytextract: {str(e)}")
                 return ""
