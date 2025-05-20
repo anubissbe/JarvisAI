@@ -1,0 +1,13 @@
+FROM python:3.9
+
+WORKDIR /app
+
+COPY basic_hybrid_search.py /app/hybrid_search.py
+COPY ollama_proxy.py /app/ollama_proxy.py
+
+# Install dependencies (use a similar set as the original container)
+RUN pip install flask requests neo4j pymilvus
+
+EXPOSE 5000
+
+CMD ["python", "ollama_proxy.py"]

@@ -1,0 +1,4 @@
+FROM llama3.1
+
+# Force GPU usage with high layer count
+PARAMETER n_gpu_layers 28

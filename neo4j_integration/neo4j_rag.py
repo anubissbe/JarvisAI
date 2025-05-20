@@ -8,7 +8,7 @@ load_dotenv()
 # Neo4j connection settings
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "your_secure_password_here")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "VerySecurePassword")
 
 class KnowledgeGraph:
     def __init__(self):

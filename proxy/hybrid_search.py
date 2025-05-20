@@ -29,10 +29,10 @@ class HybridSearch:
     def get_embedding(self, text):
         """Get embedding vector for text using Ollama"""
         try:
-            response = requests.post(
-                f"{self.ollama_url}/api/embeddings",
+            response = requests.get(timeout=10, 
+                f"{self.ollama_url}/api/embed",
                 json={"model": "nomic-embed-text", "prompt": text},
-                timeout=10
+                timeout=60
             )
             response.raise_for_status()
             data = response.json()
@@ -120,10 +120,10 @@ class HybridSearch:
         print(f"Searching OpenWebUI with knowledge base ID: {knowledge_base_id}")
         
         # This assumes you have access to OpenWebUI's API
-        api_url = "http://localhost:3000/api/v1/knowledge/query"
+        api_url = "http://open-webui:8080/api/v1/knowledge/query"
         
         try:
-            response = requests.post(
+            response = requests.get(timeout=10, 
                 api_url,
                 json={
                     "query": query_text,
@@ -131,7 +131,7 @@ class HybridSearch:
                     "top_k": top_k
                 },
                 headers={"Content-Type": "application/json"},
-                timeout=10  # Add timeout
+                timeout=60  # Add timeout
             )
             
             # Check if request was successful
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     searcher = HybridSearch(
         neo4j_uri="bolt://localhost:7687",
         neo4j_user="neo4j",
-        neo4j_password="hahanotmypassword",
+        neo4j_password="VerySecurePassword",
         milvus_host="localhost",
         milvus_port="19530",
         ollama_url="http://localhost:11434"

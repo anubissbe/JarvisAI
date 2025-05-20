@@ -1,36 +1,7 @@
 version: '3.9'
 services:
-  # Ollama service with custom entrypoint script to force GPU layer usage
+  # Ollama service - Language Model server running on V100 GPUs
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    volumes:
-      - ./ollama:/root/.ollama
-    ports:
-      - "11434:11434"
-    environment:
-      - OLLAMA_MODEL_PATH=/root/.ollama/models
-      - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_NUM_THREADS=16
-      - OLLAMA_KEEP_ALIVE=10m  
-      - OLLAMA_GPU_LAYERS=32    # This may work as an environment variable even if not as a model parameter
-      - OLLAMA_PARALLEL=2       # This may work as an environment variable
-      - CUDA_VISIBLE_DEVICES=0,1
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 24G
-        reservations:
-          memory: 8G
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    ulimits:
-      memlock: -1
-    shm_size: 16g
   # OpenWebUI service - Web interface with RAG capabilities
   open-webui:
     image: ghcr.io/open-webui/open-webui:cuda
@@ -38,6 +9,7 @@ services:
     depends_on:
       - ollama
       - milvus-standalone
+      - ollama-proxy
     volumes:
       - open-webui-data:/app/backend/data
     ports:
@@ -60,13 +32,6 @@ services:
       # Embedding Configuration
       - EMBEDDING_MODEL=nomic-embed-text
       - EMBEDDING_PROVIDER=ollama
-      - EMBEDDING_MODEL_ENDPOINT=http://ollama:11434
-      - EMBEDDING_DIMENSIONS=768
-      - EMBEDDING_BATCH_SIZE=64
-      # Performance optimizations
-      - WEBUI_WORKERS=4
-    networks:
-      - jarvis-net
 
   # Ollama Proxy with Neo4j integration
   ollama-proxy:
@@ -83,15 +48,6 @@ services:
     environment:
       - NEO4J_PASSWORD=VerySecurePassword
       - NEO4J_URI=bolt://neo4j:7687
-      - OLLAMA_API_BASE_URL=http://ollama:11434
-      - OPENWEBUI_API_BASE_URL=http://open-webui:8080
-      - LOG_LEVEL=info
-      - REQUEST_TIMEOUT=300
-      - GRAPH_CACHE_SIZE=1000
-      - HYBRID_SEARCH_BUFFER_SIZE=128
-    restart: unless-stopped
-    networks:
-      - jarvis-net
 
   # Neo4j service - MINIMAL configuration
   neo4j:
@@ -211,31 +167,23 @@ services:
       - NEO4J_PASSWORD=VerySecurePassword
       - MILVUS_HOST=milvus-standalone
       - MILVUS_PORT=19530
-      - EMBEDDING_ENDPOINT=http://ollama:11434
-      - EMBEDDING_MODEL=nomic-embed-text
-      - LOG_LEVEL=info
-      - DOCUMENT_CHUNK_SIZE=1536
-      - DOCUMENT_CHUNK_OVERLAP=256
-      - PROCESSING_BATCH_SIZE=16
-    networks:
-      - jarvis-net
 
-# Persistence layer - Volumes for data storage
+# Persistence layer - UNCHANGED to preserve your data
 volumes:
-  open-webui-data:
-  neo4j-data:
-  neo4j-logs:
-  neo4j-import:
-  neo4j-plugins:
-  milvus-data:
-  etcd-data:
-  minio-data:
-
-networks:
-  jarvis-net:
     driver: bridge
     ipam:
       driver: default
       config:
         - subnet: 172.28.0.0/16
           gateway: 172.28.0.1
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    environment:
+      - OLLAMA_MODEL_PATH=/root/.ollama/models
+      - CUDA_VISIBLE_DEVICES=0,1
+      - OLLAMA_GPU_LAYERS=28
+    volumes:
+      - ./ollama:/root/.ollama
+    networks:
+      - jarvis-net

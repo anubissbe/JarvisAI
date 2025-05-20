@@ -1,14 +1,8 @@
-<<<<<<< HEAD
-=======
-█████ ███ ██ ██ ██ ██████ ██ ███████ ███████ ██████ ███████ ██ ██ ████ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ███████ ██ ██ ██ ██ ██ ██████ ██ ███████ ███████ ██████ █████ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ████ ██████ ██████ ██ ███████ ███████ ██████ ███████ PRESENTS ██ ███████ ██████ ██ ██ ██ ███████ █████ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ █████ ██████ ██ ██ ██ ███████ ███████ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ █████ ██ ██ ██ ████ ██ ███████ ██ ██ ██
-
->>>>>>> 2c81290 (added install script)
 JarvisAI: Self-Hosted RAG System with Knowledge Graph
 =====================================================
 
 JarvisAI is a powerful self-hosted Retrieval-Augmented Generation (RAG) system that combines Large Language Models with a hybrid knowledge retrieval mechanism based on both graph databases (Neo4j) and vector databases (Milvus). This system enables advanced document processing, knowledge extraction, and intelligent context-aware AI responses.
 
-<<<<<<< HEAD
 **Note:** JarvisAI is designed to run on systems with NVIDIA GPUs (particularly V100) for optimal performance.
 
 =======
@@ -27,9 +21,7 @@ The start.sh script will automatically check requirements, install dependencies,
 
 User OpenWebUI Ollama Proxy Ollama LLM Document Processor Neo4j Milvus etcd/MinIO Document Storage & Knowledge Base Legend Services Graph DB Vector DB
 
-_JarvisAI System Architecture_
 
->>>>>>> 2c81290 (added install script)
 Table of Contents
 -----------------
 
@@ -209,7 +201,6 @@ JarvisAI has the following hardware and software requirements:
 Installation
 ------------
 
-<<<<<<< HEAD
 ### Step 1: Clone the Repository
 
     git clone https://github.com/yourusername/jarvisai.git
@@ -249,13 +240,11 @@ If you prefer to install manually, follow these steps:
     cd jarvisai
 
 #### Step 2: Set Up Environment Variables
->>>>>>> 2c81290 (added install script)
 
 Create a secure secret key for the web interface:
 
     echo "WEBUI_SECRET_KEY=$(openssl rand -hex 32)" > .env
 
-<<<<<<< HEAD
 ### Step 3: Build and Start the Containers
 
     docker-compose up -d
@@ -277,20 +266,17 @@ Wait for Ollama to start, then create the Jarvis model:
         -d "{\"name\": \"jarvis\", \"modelfile\": \"$(cat Modelfile | sed 's/"/\\"/g' | tr '\n' ' ')\"}"
 
 #### Step 5: Verify Installation
->>>>>>> 2c81290 (added install script)
 
 Check if all services are running properly:
 
     docker-compose ps
 
-<<<<<<< HEAD
 Access the web interface at [http://localhost:3000](http://localhost:3000) and create an account. Default credentials are:
 
 *   Username: `admin`
 *   Password: `password` (change this immediately!)
 =======
 Access the web interface at [http://localhost:3000](http://localhost:3000) and create an account.
->>>>>>> 2c81290 (added install script)
 
 Configuration
 -------------
@@ -373,11 +359,8 @@ Supported document types include:
 To chat with JarvisAI:
 
 1.  Click on the "Chat" tab in OpenWebUI
-<<<<<<< HEAD
 2.  Select the appropriate model (typically llama3.1)
-=======
 2.  Select the "jarvis" model from the dropdown
->>>>>>> 2c81290 (added install script)
 3.  Select your knowledge base from the dropdown
 4.  Type your questions or commands
 
@@ -491,7 +474,6 @@ Using specialized regex patterns for personal information:
         # ... more patterns
     }
 
-<<<<<<< HEAD
 =======
 Automated Start Script
 ----------------------
@@ -535,7 +517,6 @@ If no NVIDIA GPU is detected, the script will automatically configure JarvisAI t
     fi
     
 
->>>>>>> 2c81290 (added install script)
 Troubleshooting
 ---------------
 
@@ -570,11 +551,7 @@ Check the logs for specific errors related to file access, text extraction, or d
 
 If knowledge base isn't showing or working properly:
 
-<<<<<<< HEAD
-1.  Check Neo4j database: `http://localhost:7474` (neo4j/HaHanotmypassword)
-=======
 1.  Check Neo4j database: `http://localhost:7474` (neo4j/hahanotmypassword)
->>>>>>> 2c81290 (added install script)
 2.  Verify document processor logs: `docker-compose logs document-processor`
 
 ### Resetting the System
@@ -612,10 +589,7 @@ Development
 
     .
     ├── docker-compose.yml       # Main Docker Compose configuration
-<<<<<<< HEAD
-=======
     ├── start.sh                 # Automated setup script
->>>>>>> 2c81290 (added install script)
     ├── Dockerfile.document-processor # Dockerfile for document processor
     ├── document_processor.py    # Document processing code
     ├── hybrid_search.py         # Hybrid search implementation
@@ -656,7 +630,5 @@ JarvisAI can be extended in several ways:
 
 JarvisAI - A Self-Hosted RAG System with Knowledge Graph
 
-<<<<<<< HEAD
 =======
 Created by [AnubissBE](https://github.com/AnubissBE)
->>>>>>> 2c81290 (added install script)

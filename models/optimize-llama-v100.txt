@@ -1,0 +1,7 @@
+FROM llama3.1:8b-instruct
+
+# Optimized for dual V100 GPUs
+PARAMETER n_gpu_layers 32
+PARAMETER gpu_parallel 2
+PARAMETER tensors.gpu 1
+PARAMETER batching.modelconfig.tensor_split "[0.5, 0.5]"

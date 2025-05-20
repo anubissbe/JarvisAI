@@ -48,11 +48,7 @@ class DocumentProcessor:
         # Configuration
         self.neo4j_uri = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
         self.neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
-<<<<<<< HEAD
-        self.neo4j_password = os.environ.get("NEO4J_PASSWORD", "Verysecretpassword")
-=======
-        self.neo4j_password = os.environ.get("NEO4J_PASSWORD", "hahanotmypassword")
->>>>>>> 2c81290 (added install script)
+        self.neo4j_password = os.environ.get("NEO4J_PASSWORD", "VerySecurePassword")
         self.uploads_dir = os.environ.get("UPLOADS_DIR", "/app/backend/data/uploads")
         self.processed_dir = os.environ.get("PROCESSED_DIR", "/processed")
         self.config_dir = os.environ.get("CONFIG_DIR", "/app/config")
