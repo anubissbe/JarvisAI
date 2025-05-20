@@ -29,7 +29,7 @@ class HybridSearch:
     def get_embedding(self, text):
         """Get embedding vector for text using Ollama"""
         try:
-            response = requests.get(timeout=10, 
+            response = requests.get(
                 f"{self.ollama_url}/api/embed",
                 json={"model": "nomic-embed-text", "prompt": text},
                 timeout=60
@@ -123,7 +123,7 @@ class HybridSearch:
         api_url = "http://open-webui:8080/api/v1/knowledge/query"
         
         try:
-            response = requests.get(timeout=10, 
+            response = requests.get(
                 api_url,
                 json={
                     "query": query_text,
