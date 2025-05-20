@@ -2,10 +2,25 @@
 import os
 import re
 import logging
-from neo4j import GraphDatabase
-import numpy as np
-import requests
-from pymilvus import connections, Collection, utility
+try:
+    from neo4j import GraphDatabase
+except ImportError:  # pragma: no cover - optional dependency
+    GraphDatabase = None
+
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover - optional dependency
+    np = None
+
+try:
+    import requests
+except ImportError:  # pragma: no cover - optional dependency
+    requests = None
+
+try:
+    from pymilvus import connections, Collection, utility
+except ImportError:  # pragma: no cover - optional dependency
+    connections = Collection = utility = None
 import json
 import traceback
 
@@ -19,26 +34,33 @@ logger = logging.getLogger("HybridSearch")
 class HybridSearch:
     def __init__(self, neo4j_uri, neo4j_user, neo4j_password, milvus_host, milvus_port, ollama_url):
         # Neo4j connection
-        try:
-            self.driver = GraphDatabase.driver(
-                neo4j_uri, 
-                auth=(neo4j_user, neo4j_password)
-            )
-            logger.info(f"Connected to Neo4j at {neo4j_uri}")
-        except Exception as e:
-            logger.error(f"Failed to connect to Neo4j: {str(e)}")
+        if GraphDatabase is not None:
+            try:
+                self.driver = GraphDatabase.driver(
+                    neo4j_uri,
+                    auth=(neo4j_user, neo4j_password)
+                )
+                logger.info(f"Connected to Neo4j at {neo4j_uri}")
+            except Exception as e:
+                logger.error(f"Failed to connect to Neo4j: {str(e)}")
+                self.driver = None
+        else:
+            logger.warning("neo4j library not installed; graph features disabled")
             self.driver = None
-        
+
         # Milvus connection
-        try:
-            connections.connect(
-                alias="default", 
-                host=milvus_host,
-                port=milvus_port
-            )
-            logger.info(f"Connected to Milvus at {milvus_host}:{milvus_port}")
-        except Exception as e:
-            logger.error(f"Failed to connect to Milvus: {str(e)}")
+        if connections is not None:
+            try:
+                connections.connect(
+                    alias="default",
+                    host=milvus_host,
+                    port=milvus_port
+                )
+                logger.info(f"Connected to Milvus at {milvus_host}:{milvus_port}")
+            except Exception as e:
+                logger.error(f"Failed to connect to Milvus: {str(e)}")
+        else:
+            logger.warning("pymilvus library not installed; vector search disabled")
         
         # Ollama connection for embeddings
         self.ollama_url = ollama_url
@@ -55,8 +77,8 @@ class HybridSearch:
     
     def refresh_kb_cache(self):
         """Refresh the cache of available knowledge bases"""
-        if not self.driver:
-            logger.error("Neo4j driver not available for KB cache refresh")
+        if GraphDatabase is None or not self.driver:
+            logger.warning("Neo4j driver not available for KB cache refresh")
             return
         
         try:
@@ -193,9 +215,9 @@ class HybridSearch:
     def _graph_search(self, query_terms, knowledge_base_id, top_k=3, is_personal_query=False):
         """Search the knowledge graph for relevant information"""
         results = []
-        
-        if not self.driver:
-            logger.error("Neo4j driver not available for graph search")
+
+        if GraphDatabase is None or not self.driver:
+            logger.warning("Graph search not available")
             return results
         
         try:
@@ -319,7 +341,11 @@ class HybridSearch:
     def _vector_search(self, query_text, knowledge_base_id, top_k=3):
         """Search for similar documents using vector similarity in Milvus"""
         results = []
-        
+
+        if connections is None or Collection is None or utility is None:
+            logger.warning("Vector search libraries not available")
+            return results
+
         try:
             # Generate embedding for the query
             query_embedding = self._get_embedding(query_text)
@@ -389,6 +415,10 @@ class HybridSearch:
     
     def _initialize_vector_collection(self, knowledge_base_id):
         """Initialize a vector collection for a knowledge base if it doesn't exist"""
+        if connections is None or Collection is None or utility is None:
+            logger.warning("Vector search libraries not available")
+            return False
+
         try:
             collection_name = f"documents_{knowledge_base_id.replace('-', '_')}"
             
@@ -433,6 +463,10 @@ class HybridSearch:
     
     def _get_embedding(self, text):
         """Generate a text embedding using Ollama"""
+        if requests is None:
+            logger.warning("Requests library not available; cannot generate embeddings")
+            return None
+
         try:
             response = requests.post(
                 f"{self.ollama_url}/api/embeddings",
