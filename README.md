@@ -204,7 +204,7 @@ Installation
     cd jarvisai
 
 ### Step 2: Set Up Environment Variables
-=======
+
 ### Automatic Installation
 
 JarvisAI comes with an automated setup script (`start.sh`) that handles all installation steps for you:
@@ -246,14 +246,34 @@ Create a secure secret key for the web interface:
 
     docker-compose up -d
 
+### Required Ollama Models
+
+JarvisAI relies on two models from Ollama:
+
+* `llama3.1:8b` – the base model used to build the custom **jarvis** model.
+* `nomic-embed-text` – provides embeddings for hybrid search.
+
+You can pull these models manually before starting the system:
+
+```bash
+ollama pull llama3.1:8b
+ollama pull nomic-embed-text
+```
+
+The [`start.sh`](start.sh) script automatically pulls `llama3.1:8b` when creating the `jarvis` model as shown in the script:
+```
+curl -X POST "http://localhost:11434/api/pull" \
+    -H "Content-Type: application/json" \
+    -d '{"name": "llama3.1:8b"}'
+```
+Model selection for embeddings is configured in [`docker-compose.yml`](docker-compose.yml):
+```
+EMBEDDING_MODEL=nomic-embed-text
+```
+
 **Warning:** Initial startup may take considerable time (30+ minutes) as models are downloaded and containers are initialized.
 
 ### Step 4: Verify Installation
-=======
-#### Step 3: Build and Start the Containers
-
-    docker-compose up -d
-
 #### Step 4: Create the Jarvis Model
 
 Wait for Ollama to start, then create the Jarvis model:
@@ -272,8 +292,6 @@ Access the web interface at [http://localhost:3000](http://localhost:3000) and c
 
 *   Username: `admin`
 *   Password: `password` (change this immediately!)
-=======
-Access the web interface at [http://localhost:3000](http://localhost:3000) and create an account.
 
 Configuration
 -------------
@@ -481,9 +499,8 @@ Using specialized regex patterns for personal information:
         # ... more patterns
     }
 
-=======
-Automated Start Script
-----------------------
+## Automated Start Script
+
 
 JarvisAI includes a comprehensive `start.sh` script that automates the entire setup and launch process. This script performs the following functions:
 
