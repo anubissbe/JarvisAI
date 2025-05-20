@@ -234,6 +234,23 @@ setup_jarvis_model() {
         echo -e "${RED}Unable to pull llama3.1:8b after $pull_attempts attempts.${NC}"
         return 1
     fi
+
+    # Pull embedding model for RAG
+    echo -e "${YELLOW}Pulling nomic-embed-text model...${NC}"
+    pull_attempts=0
+    pull_success=false
+    while [ $pull_attempts -lt 3 ]; do
+        curl -f -X POST "http://localhost:11434/api/pull" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "nomic-embed-text"}' && pull_success=true && break
+        echo -e "${RED}Failed to pull nomic-embed-text (attempt $((pull_attempts+1)))${NC}"
+        pull_attempts=$((pull_attempts+1))
+        sleep 5
+    done
+    if [ "$pull_success" != true ]; then
+        echo -e "${RED}Unable to pull nomic-embed-text after $pull_attempts attempts.${NC}"
+        return 1
+    fi
     
     # Wait a moment for the pull to start
     sleep 5
@@ -243,9 +260,9 @@ setup_jarvis_model() {
     
     # Using local file instead of base64 for better compatibility
     if [ -f Modelfile ]; then
-        # Preserve newlines when sending the Modelfile to the API
-        # Convert real newlines to the literal \n characters and escape quotes
-        modelfile_contents=$(sed ':a;N;$!ba;s/\n/\\n/g' Modelfile | sed 's/"/\\"/g')
+        # Build Modelfile content for JSON payload
+        # Convert newlines to spaces and escape quotes to avoid API errors
+        modelfile_contents=$(cat Modelfile | sed 's/"/\\"/g' | tr '\n' ' ')
         create_attempts=0
         create_success=false
         while [ $create_attempts -lt 3 ]; do

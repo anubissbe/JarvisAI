@@ -260,7 +260,7 @@ ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 ```
 
-The [`start.sh`](start.sh) script automatically pulls `llama3.1:8b` when creating the `jarvis` model as shown in the script:
+The [`start.sh`](start.sh) script automatically pulls `llama3.1:8b` and `nomic-embed-text` when creating the `jarvis` model as shown in the script:
 ```
 curl -X POST "http://localhost:11434/api/pull" \
     -H "Content-Type: application/json" \
