@@ -592,10 +592,10 @@ Development
     ├── start.sh                 # Automated setup script
     ├── Dockerfile.document-processor # Dockerfile for document processor
     ├── document_processor.py    # Document processing code
-    ├── hybrid_search.py         # Hybrid search implementation
+    ├── hybrid_search/hybrid_search.py  # Hybrid search implementation
     ├── jarvis_kb_config.env     # Environment configuration
     ├── Modelfile                # Ollama model configuration
-    ├── ollama_proxy.py          # Proxy for enhancing LLM requests
+    ├── proxy/ollama_proxy.py    # Proxy for enhancing LLM requests
     ├── milvus.compose.yml       # Milvus vector database config
     └── proxy/                   # Proxy service code
         └── Dockerfile           # Dockerfile for proxy service
