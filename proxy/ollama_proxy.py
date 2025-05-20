@@ -99,4 +99,5 @@ def proxy(path):
     )
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # Run on the same port exposed by the Docker container
+    app.run(host='0.0.0.0', port=11435)
