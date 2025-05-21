@@ -1,7 +1,16 @@
 from flask import Flask, request, jsonify, Response, stream_with_context
 import logging
 import os
+import sys
 import requests
+
+# Ensure the main hybrid_search package is importable from the mounted
+# directory.  The volume is mounted at /opt/jarvis/hybrid_search via
+# docker-compose.
+HYBRID_SEARCH_ROOT = os.environ.get("HYBRID_SEARCH_ROOT", "/opt/jarvis")
+if HYBRID_SEARCH_ROOT not in sys.path:
+    sys.path.insert(0, HYBRID_SEARCH_ROOT)
+
 from hybrid_search import HybridSearch
 
 app = Flask(__name__)

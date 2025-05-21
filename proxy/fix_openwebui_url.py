@@ -1,10 +1,10 @@
 import os
 import re
 
-# Determine path to the hybrid_search module dynamically
-import os
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-hybrid_search_file = os.path.join(base_dir, 'hybrid_search', 'hybrid_search.py')
+# Path to the installed hybrid_search package inside the container.
+# docker-compose mounts the package at /opt/jarvis/hybrid_search.
+HYBRID_SEARCH_DIR = os.environ.get('HYBRID_SEARCH_DIR', '/opt/jarvis/hybrid_search')
+hybrid_search_file = os.path.join(HYBRID_SEARCH_DIR, 'hybrid_search.py')
 
 def fix_openwebui_url():
     # Get the correct URL from environment variable or use default
