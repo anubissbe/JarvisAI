@@ -967,6 +967,14 @@ class DocumentProcessor:
         try:
             collection_name = f"documents_{kb_id.replace('-', '_')}"
 
+            # Validate embedding dimension before insertion
+            expected_dim = getattr(self.searcher, "embedding_dim", None)
+            if expected_dim is not None and len(embedding) != expected_dim:
+                logger.warning(
+                    f"Embedding dimension mismatch: expected {expected_dim}, got {len(embedding)}; skipping insertion"
+                )
+                return
+
             # Create collection if it doesn't exist
             if not utility.has_collection(collection_name):
                 if not self.searcher._initialize_vector_collection(kb_id):
