@@ -409,6 +409,13 @@ JarvisAI will automatically:
 *   Enhance the LLM prompt with this information
 *   Generate a response based on both the model and your knowledge
 
+### Hybrid Search Test Page
+
+JarvisAI exposes a lightweight page on `http://localhost:5000` for testing
+hybrid search queries. The page automatically retrieves the list of available
+knowledge base IDs from the backend and lets you choose which one to query
+before performing a search.
+
 Document Processing
 -------------------
 
