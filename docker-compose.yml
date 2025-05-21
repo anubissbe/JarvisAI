@@ -13,9 +13,10 @@ services:
       - OLLAMA_MODEL_PATH=/root/.ollama/models
       - OLLAMA_HOST=0.0.0.0
       - OLLAMA_NUM_THREADS=24
-      - OLLAMA_KEEP_ALIVE=10m  
+      - OLLAMA_KEEP_ALIVE=10m
       - OLLAMA_GPU_LAYERS=32    # This may work as an environment variable even if not as a model parameter
       - OLLAMA_PARALLEL=2       # This may work as an environment variable
+      - OLLAMA_CONTEXT_LENGTH=2048
       - CUDA_VISIBLE_DEVICES=0,1
     networks:
       - jarvis-net
