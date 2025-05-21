@@ -9,7 +9,7 @@ except ImportError:
 from datetime import datetime
 
 class HybridSearch:
-    def __init__(self, neo4j_uri, neo4j_user, neo4j_password, milvus_host, milvus_port, ollama_url):
+    def __init__(self, neo4j_uri, neo4j_user, neo4j_password, milvus_host, milvus_port, ollama_url, openwebui_url):
         # Neo4j connection
         self.driver = None
         if GraphDatabase is not None:
@@ -33,6 +33,9 @@ class HybridSearch:
         
         # Ollama API for embeddings
         self.ollama_url = ollama_url
+
+        # OpenWebUI API base URL
+        self.openwebui_url = openwebui_url
     
     def get_timestamp(self):
         """Get current timestamp for status check"""
@@ -140,7 +143,7 @@ class HybridSearch:
         print(f"Searching OpenWebUI with knowledge base ID: {knowledge_base_id}")
         
         # This assumes you have access to OpenWebUI's API
-        api_url = "http://open-webui:8080/api/v1/knowledge/query"
+        api_url = f"{self.openwebui_url}/api/v1/knowledge/query"
         
         try:
             response = requests.post(
@@ -257,13 +260,15 @@ if __name__ == "__main__":
     milvus_host = os.environ.get('MILVUS_HOST', 'localhost')
     milvus_port = os.environ.get('MILVUS_PORT', '19530')
     ollama_url = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
+    openwebui_url = os.environ.get('OPENWEBUI_API_BASE_URL', 'http://open-webui:8080')
     searcher = HybridSearch(
         neo4j_uri,
         neo4j_user,
         neo4j_password,
         milvus_host,
         milvus_port,
-        ollama_url
+        ollama_url,
+        openwebui_url
     )
     
     try:

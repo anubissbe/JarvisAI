@@ -325,6 +325,10 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 *   `MAX_RESULTS_PER_KB`: Maximum results per knowledge base (default: 5)
 *   `OLLAMA_URL`: Base URL for the embedding service used by the document processor
 
+#### Proxy Settings
+
+* `OPENWEBUI_API_BASE_URL`: Base URL for the OpenWebUI API used by the hybrid search proxy
+
 ### LLM Configuration
 
 The LLM is configured in the `Modelfile`. You can modify this file to change LLM parameters:
