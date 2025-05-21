@@ -45,40 +45,40 @@ def proxy(path):
     data = request.get_json(silent=True)
 
     # For chat requests, augment with hybrid search context
-    if path == 'chat' and data is not None and hybrid_search is not None:
-        logger.info("Processing chat request via hybrid search")
+    if path == 'chat' and data is not None:
+        logger.info("Processing chat request")
 
-        # Extract latest user message
-        user_message = ""
-        messages = data.get("messages", [])
-        for msg in reversed(messages):
-            if msg.get("role") == "user":
-                user_message = msg.get("content", "")
-                break
+        if hybrid_search is not None:
+            logger.info("Using hybrid search for context augmentation")
+            # Extract latest user message
+            user_message = ""
+            messages = data.get("messages", [])
+            for msg in reversed(messages):
+                if msg.get("role") == "user":
+                    user_message = msg.get("content", "")
+                    break
 
-        kb_id = (
-            data.get("knowledge_base_id")
-            or data.get("kb_id")
-            or data.get("knowledge_id")
-            or os.environ.get("DEFAULT_KB_ID")
-        )
+            kb_id = (
+                data.get("knowledge_base_id")
+                or data.get("kb_id")
+                or data.get("knowledge_id")
+                or os.environ.get("DEFAULT_KB_ID")
+            )
 
-        if user_message and kb_id:
-            try:
-                results = hybrid_search.hybrid_search(user_message, kb_id, top_k=3)
-                context_parts = [r.get("content", "") for r in results if r.get("content")]
-                if context_parts:
-                    options = data.setdefault("options", {})
-                    existing = options.get("system", "")
-                    context = "\n\n".join(context_parts)
-                    options["system"] = f"{existing}\n\nContext:\n{context}".strip()
-                    logger.info("Added %d context snippets to system prompt", len(context_parts))
-            except Exception as exc:
-                logger.error("Hybrid search failed: %s", exc)
-    else:
-        if path == 'chat' and data is not None:
+            if user_message and kb_id:
+                try:
+                    results = hybrid_search.hybrid_search(user_message, kb_id, top_k=3)
+                    context_parts = [r.get("content", "") for r in results if r.get("content")]
+                    if context_parts:
+                        options = data.setdefault("options", {})
+                        existing = options.get("system", "")
+                        context = "\n\n".join(context_parts)
+                        options["system"] = f"{existing}\n\nContext:\n{context}".strip()
+                        logger.info("Added %d context snippets to system prompt", len(context_parts))
+                except Exception as exc:
+                    logger.error("Hybrid search failed: %s", exc)
+        else:
             logger.warning("Hybrid search is not available, proceeding without knowledge augmentation")
-
     # Pass through to Ollama for all requests
     url = f"{OLLAMA_API_BASE_URL}/api/{path}"
     logger.info("Proxying request to: %s (Method: %s)", url, request.method)
@@ -109,4 +109,4 @@ def proxy(path):
 
 if __name__ == '__main__':
     # Run on the same port exposed by the Docker container
-    app.run(host='0.0.0.0', port=11435)
+    app.run(host='0.0.0.0', port=11435, debug=False)
