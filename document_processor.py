@@ -971,8 +971,29 @@ class DocumentProcessor:
             embedding = None
             if self.searcher:
                 embedding = self.searcher._get_embedding(text)
-            if embedding:
-                self.add_vector_to_milvus(document_title, file_path, text, kb_id, embedding)
+
+            # Create or load the Milvus collection and insert the embedding
+            if embedding and self.searcher:
+                if self.searcher._initialize_vector_collection(kb_id):
+                    collection_name = f"documents_{kb_id.replace('-', '_')}"
+                    collection = Collection(collection_name)
+                    collection.load()
+
+                    data = [
+                        [document_title],
+                        [file_path],
+                        [text],
+                        [kb_id],
+                        [embedding],
+                    ]
+                    collection.insert(data)
+                    collection.flush()
+                    collection.release()
+                    logger.info(
+                        f"Inserted vector for {document_title} into Milvus collection {collection_name}"
+                    )
+                else:
+                    logger.error(f"Failed to initialize vector collection for KB: {kb_id}")
 
             # Extract technical knowledge (original functionality)
             technical_knowledge = self.extract_knowledge(text, document_title)
