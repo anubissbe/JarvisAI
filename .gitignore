@@ -14,8 +14,6 @@ env/
 venv/
 ENV/
 
-# Configuration files with potential secrets
-config/kb_default_config.json
 
 # Database files
 *.db
@@ -36,3 +34,7 @@ volumes/processed_documents/
 
 # Docker volumes
 docker-volumes/
+
+# Ignore generated data and Ollama downloaded models
+tmp/
+ollama/models/

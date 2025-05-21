@@ -44,22 +44,31 @@ except ImportError:  # pragma: no cover - optional dependency
     Collection = None
     utility = None
 
-# Add the hybrid_search directory to the path
-sys.path.append('/opt/jarvis/hybrid_search')
-# Assuming hybrid_search has methods for accessing the vector DB
+# Ensure repository root is in import path
+repo_root = os.path.dirname(os.path.abspath(__file__))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
 from hybrid_search import HybridSearch
 
-# Ensure log directory exists
-os.makedirs("/var/log/jarvis", exist_ok=True)
+# Determine repository root for logs
+repo_root = os.path.dirname(os.path.abspath(__file__))
+# Log directory can be overridden via env var, default to repo/logs
+log_dir = os.environ.get("JARVIS_LOG_DIR", os.path.join(repo_root, "logs"))
+os.makedirs(log_dir, exist_ok=True)
 
-# Configure logging
+# Configure logging with fallback if file handler fails
+log_file = os.path.join(log_dir, "document_processor.log")
+handlers = []
+try:
+    fh = logging.FileHandler(log_file)
+    handlers.append(fh)
+except Exception as e:
+    print(f"Warning: could not open log file {log_file}: {e}", file=sys.stderr)
+handlers.append(logging.StreamHandler())
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("/var/log/jarvis/document_processor.log"),
-        logging.StreamHandler()
-    ]
+    handlers=handlers
 )
 logger = logging.getLogger("DocumentProcessor")
 
@@ -278,6 +287,11 @@ class DocumentProcessor:
             "Git", "Version Control", "Web Development", "Frontend", "Backend",
             "Full Stack", "Mobile Development", "Desktop Application", "Machine Learning",
             "AI", "Deep Learning", "Neural Network", "NLP", "Computer Vision"
+        ]
+        # Include additional topics for concept-topic mapping
+        programming_topics += [
+            "Regular Expressions", "File I/O", "Error Handling",
+            "Command Line", "Data Processing"
         ]
         
         # Find topics in the text

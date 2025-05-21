@@ -17,6 +17,8 @@ services:
       - OLLAMA_GPU_LAYERS=32    # This may work as an environment variable even if not as a model parameter
       - OLLAMA_PARALLEL=2       # This may work as an environment variable
       - CUDA_VISIBLE_DEVICES=0,1
+    networks:
+      - jarvis-net
     restart: unless-stopped
     deploy:
       resources:
@@ -31,6 +33,7 @@ services:
     ulimits:
       memlock: -1
     shm_size: 16g
+
   # OpenWebUI service - Web interface with RAG capabilities
   open-webui:
     image: ghcr.io/open-webui/open-webui:cuda

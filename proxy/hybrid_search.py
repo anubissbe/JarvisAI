@@ -1,19 +1,31 @@
+import os
+import sys
 import requests
-from neo4j import GraphDatabase
+try:
+    from neo4j import GraphDatabase
+except ImportError:
+    GraphDatabase = None
+    print("Warning: neo4j driver not installed; graph features disabled", file=sys.stderr)
 from datetime import datetime
 
 class HybridSearch:
     def __init__(self, neo4j_uri, neo4j_user, neo4j_password, milvus_host, milvus_port, ollama_url):
         # Neo4j connection
-        try:
-            self.driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
-            # Test the connection
-            with self.driver.session() as session:
-                session.run("RETURN 1")
-            print("Successfully connected to Neo4j")
-        except Exception as e:
-            print(f"Neo4j connection error: {str(e)}")
-            self.driver = None
+        self.driver = None
+        if GraphDatabase is not None:
+            try:
+                self.driver = GraphDatabase.driver(
+                    neo4j_uri,
+                    auth=(neo4j_user, neo4j_password)
+                )
+                with self.driver.session() as session:
+                    session.run("RETURN 1")
+                print("Successfully connected to Neo4j")
+            except Exception as e:
+                print(f"Neo4j connection error: {str(e)}")
+                self.driver = None
+        else:
+            print("Neo4j library not installed; graph features disabled", file=sys.stderr)
         
         # Milvus configuration (used through OpenWebUI's API)
         self.milvus_host = milvus_host
@@ -63,8 +75,9 @@ class HybridSearch:
                 topic_result = session.run("""
                     MATCH (t:Topic)
                     WHERE any(keyword IN $keywords WHERE toLower(t.name) CONTAINS toLower(keyword))
-                    MATCH (d:Document)-[:COVERS]->(t)
-                    RETURN d.id, d.title, d.path, collect(distinct t.name) AS topics, 
+                    MATCH (d:Document)-[:CONTAINS_TOPIC]->(t)
+                    RETURN d.path AS id, d.title AS title, d.path AS path,
+                           collect(distinct t.name) AS topics,
                            count(t) AS relevance
                     ORDER BY relevance DESC
                     LIMIT 5
@@ -75,11 +88,11 @@ class HybridSearch:
                 
                 for record in topic_records:
                     results.append({
-                        "id": record["d.id"],
-                        "title": record["d.title"],
-                        "path": record["d.path"],
+                        "id": record["id"],
+                        "title": record["title"],
+                        "path": record["path"],
                         "topics": record["topics"],
-                        "relevance_score": record["relevance"] * 0.2,  # Normalize score
+                        "relevance_score": record.get("relevance", 0) * 0.2,
                         "source": "graph_topic"
                     })
             except Exception as e:
@@ -90,12 +103,15 @@ class HybridSearch:
                 print("Searching for matching concepts...")
                 concept_result = session.run("""
                     MATCH (c:Concept)
-                    WHERE any(keyword IN $keywords WHERE 
-                              toLower(c.name) CONTAINS toLower(keyword) OR 
+                    WHERE any(keyword IN $keywords WHERE
+                              toLower(c.name) CONTAINS toLower(keyword) OR
                               toLower(c.description) CONTAINS toLower(keyword))
-                    MATCH (c)-[:BELONGS_TO]->(t)<-[:COVERS]-(d:Document)
-                    RETURN d.id, d.title, d.path, c.name, c.description,
-                           collect(distinct t.name) AS topics
+                    MATCH (d:Document)-[:DEMONSTRATES_CONCEPT]->(c)
+                    OPTIONAL MATCH (t:Topic)-[:RELATED_TO]->(c)
+                    WITH d, c, collect(distinct t.name) AS topics
+                    RETURN d.path AS id, d.title AS title, d.path AS path,
+                           c.name AS concept, c.description AS concept_description,
+                           topics
                     LIMIT 5
                 """, keywords=keywords)
                 
@@ -104,13 +120,13 @@ class HybridSearch:
                 
                 for record in concept_records:
                     results.append({
-                        "id": record["d.id"],
-                        "title": record["d.title"],
-                        "path": record["d.path"],
-                        "topics": record["topics"],
-                        "concept": record["c.name"],
-                        "concept_description": record["c.description"],
-                        "relevance_score": 0.8,  # Concepts are highly relevant
+                        "id": record["id"],
+                        "title": record["title"],
+                        "path": record["path"],
+                        "topics": record.get("topics", []),
+                        "concept": record.get("concept"),
+                        "concept_description": record.get("concept_description"),
+                        "relevance_score": 0.8,
                         "source": "graph_concept"
                     })
             except Exception as e:
@@ -234,13 +250,20 @@ if __name__ == "__main__":
         sys.exit(1)
     
     query = sys.argv[1]
+    # Configure via environment variables
+    neo4j_uri = os.environ.get('NEO4J_URI', 'bolt://localhost:7687')
+    neo4j_user = os.environ.get('NEO4J_USER', 'neo4j')
+    neo4j_password = os.environ.get('NEO4J_PASSWORD', 'VerySecurePassword')
+    milvus_host = os.environ.get('MILVUS_HOST', 'localhost')
+    milvus_port = os.environ.get('MILVUS_PORT', '19530')
+    ollama_url = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
     searcher = HybridSearch(
-        neo4j_uri="bolt://localhost:7687",
-        neo4j_user="neo4j",
-        neo4j_password="VerySecurePassword",
-        milvus_host="localhost",
-        milvus_port="19530",
-        ollama_url="http://localhost:11434"
+        neo4j_uri,
+        neo4j_user,
+        neo4j_password,
+        milvus_host,
+        milvus_port,
+        ollama_url
     )
     
     try:

@@ -1,8 +1,10 @@
 import os
 import re
 
-# Path to the file containing the URL reference
-hybrid_search_file = "/opt/jarvis/hybrid_search/hybrid_search.py"
+# Determine path to the hybrid_search module dynamically
+import os
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+hybrid_search_file = os.path.join(base_dir, 'hybrid_search', 'hybrid_search.py')
 
 def fix_openwebui_url():
     # Get the correct URL from environment variable or use default
