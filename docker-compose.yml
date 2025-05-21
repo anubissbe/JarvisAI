@@ -211,7 +211,7 @@ services:
     env_file:
       - ./jarvis_kb_config.env
     environment:
-      - EMBEDDING_ENDPOINT=http://ollama:11434
+      - OLLAMA_URL=http://ollama:11434
       - EMBEDDING_MODEL=nomic-embed-text
       - LOG_LEVEL=info
       - DOCUMENT_CHUNK_SIZE=1536
