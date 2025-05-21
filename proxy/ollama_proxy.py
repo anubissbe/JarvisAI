@@ -75,6 +75,9 @@ def proxy(path):
                     logger.info("Added %d context snippets to system prompt", len(context_parts))
             except Exception as exc:
                 logger.error("Hybrid search failed: %s", exc)
+    else:
+        if path == 'chat' and data is not None:
+            logger.warning("Hybrid search is not available, proceeding without knowledge augmentation")
 
     # Pass through to Ollama for all requests
     url = f"{OLLAMA_API_BASE_URL}/api/{path}"
