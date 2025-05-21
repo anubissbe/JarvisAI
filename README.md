@@ -328,7 +328,7 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 
 #### Proxy Settings
 
-* `OPENWEBUI_API_BASE_URL`: Base URL for the OpenWebUI API used by the hybrid search proxy
+* `OPENWEBUI_API_BASE_URL`: Base URL for the OpenWebUI API used by the hybrid search proxy (default: `http://open-webui:8080`)
 
 ### LLM Configuration
 
