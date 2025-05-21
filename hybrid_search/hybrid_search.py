@@ -79,6 +79,14 @@ class HybridSearch:
         self.ollama_url = ollama_url
         self.model = "nomic-embed-text"
 
+        # Embedding dimension configuration
+        env_dim = os.environ.get("EMBEDDING_DIM") or os.environ.get("EMBEDDING_DIMENSIONS")
+        try:
+            self.embedding_dim = int(env_dim) if env_dim else 768
+        except ValueError:
+            logger.warning(f"Invalid embedding dimension '{env_dim}', using default 768")
+            self.embedding_dim = 768
+
         # Cache for available knowledge bases
         self.kb_cache = {}
         self.refresh_kb_cache()
@@ -449,7 +457,7 @@ class HybridSearch:
                 FieldSchema(name="path", dtype=DataType.VARCHAR, max_length=512),
                 FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=65535),
                 FieldSchema(name="kb_id", dtype=DataType.VARCHAR, max_length=64),
-                FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=768)  # Adjust dimension to match model
+                FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_dim)
             ]
             
             schema = CollectionSchema(fields)
