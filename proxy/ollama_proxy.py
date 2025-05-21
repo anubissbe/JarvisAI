@@ -24,7 +24,6 @@ if not NEO4J_PASSWORD:
 MILVUS_HOST = os.environ.get("MILVUS_HOST", "milvus-standalone")
 MILVUS_PORT = os.environ.get("MILVUS_PORT", "19530")
 OLLAMA_API_BASE_URL = os.environ.get("OLLAMA_API_BASE_URL", "http://ollama:11434")
-OPENWEBUI_API_BASE_URL = os.environ.get("OPENWEBUI_API_BASE_URL", "http://open-webui:8080")
 
 try:
     hybrid_search = HybridSearch(
@@ -34,7 +33,6 @@ try:
         milvus_host=MILVUS_HOST,
         milvus_port=MILVUS_PORT,
         ollama_url=OLLAMA_API_BASE_URL,
-        openwebui_url=OPENWEBUI_API_BASE_URL,
     )
 except Exception as exc:
     logger.error("Failed to initialise HybridSearch: %s", exc)

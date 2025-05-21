@@ -33,10 +33,10 @@ logging.basicConfig(
 logger = logging.getLogger("HybridSearch")
 
 class HybridSearch:
-    def __init__(self, neo4j_uri, neo4j_user, neo4j_password, milvus_host, milvus_port, ollama_url, openwebui_url=None):
+    def __init__(self, neo4j_uri, neo4j_user, neo4j_password, milvus_host, milvus_port, ollama_url):
+        """Initialise connections to Neo4j and Milvus."""
         # Neo4j connection with retries in case the database is not ready yet
         self.driver = None
-        self.openwebui_url = openwebui_url
         if GraphDatabase is not None:
             max_retries = int(os.environ.get("NEO4J_MAX_RETRIES", "10"))
             retry_delay = int(os.environ.get("NEO4J_RETRY_DELAY", "3"))

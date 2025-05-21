@@ -324,10 +324,6 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 *   `SPACY_MODEL`: spaCy language model to load (default: `en_core_web_lg`)
 *   `LOG_DIR`: Directory where the document processor writes logs (default: `./logs`)
 
-#### Proxy Settings
-
-* `OPENWEBUI_API_BASE_URL`: Base URL for the OpenWebUI API used by the hybrid search proxy (default: `http://open-webui:8080`)
-
 ### LLM Configuration
 
 The LLM is configured in the `Modelfile`. You can modify this file to change LLM parameters:
