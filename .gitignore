@@ -38,3 +38,7 @@ docker-volumes/
 # Ignore generated data and Ollama downloaded models
 tmp/
 ollama/models/
+
+# Ignore Ollama keys
+ollama/*.pub
+ollama/id_*
