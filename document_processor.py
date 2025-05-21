@@ -171,6 +171,16 @@ class DocumentProcessor:
         config_path = os.path.join(self.config_dir, "kb_default_config.json")
         
         try:
+            # Step 0: Check environment variable
+            env_kb = os.environ.get("DEFAULT_KB_ID")
+            if env_kb:
+                try:
+                    uuid.UUID(str(env_kb))
+                    logger.info(f"Using default KB ID from environment: {env_kb}")
+                    return env_kb
+                except Exception:
+                    logger.warning("Ignoring invalid DEFAULT_KB_ID environment variable")
+
             # Step 1: Try to read from persistent config file
             if os.path.exists(config_path):
                 with open(config_path, 'r') as f:
