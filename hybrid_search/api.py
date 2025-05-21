@@ -53,6 +53,15 @@ if FLASK_AVAILABLE:
             print(f"Search error: {str(e)}")
             return jsonify({"error": str(e), "results": []}), 500
 
+    @app.route('/kb_list', methods=['GET'])
+    def kb_list():
+        """Return list of available knowledge base IDs."""
+        try:
+            kb_ids = searcher.get_available_knowledge_bases()
+            return jsonify({"knowledge_base_ids": kb_ids})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
 # Add this route to test the API
 # def status():  # removed: redundant unguarded handler
 if FLASK_AVAILABLE:

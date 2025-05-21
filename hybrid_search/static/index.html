@@ -6,7 +6,8 @@
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         h1 { color: #333; }
         #search-form { margin: 20px 0; }
-        #search-input { width: 70%; padding: 10px; font-size: 16px; }
+        #kb-select { padding: 8px; font-size: 14px; }
+        #search-input { width: 60%; padding: 10px; font-size: 16px; }
         #search-button { padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; cursor: pointer; }
         .result { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
         .result h3 { margin-top: 0; color: #2c3e50; }
@@ -20,6 +21,7 @@
     <h1>Jarvis Hybrid Search</h1>
     
     <div id="search-form">
+        <select id="kb-select"></select>
         <input type="text" id="search-input" placeholder="Search your knowledge base...">
         <button id="search-button">Search</button>
     </div>
@@ -31,8 +33,11 @@
     <script>
         const searchInput = document.getElementById('search-input');
         const searchButton = document.getElementById('search-button');
+        const kbSelect = document.getElementById('kb-select');
         const loadingDiv = document.getElementById('loading');
         const resultsDiv = document.getElementById('results');
+
+        window.addEventListener('DOMContentLoaded', loadKBIDs);
         
         searchButton.addEventListener('click', performSearch);
         searchInput.addEventListener('keypress', function(e) {
@@ -41,9 +46,27 @@
             }
         });
         
+        function loadKBIDs() {
+            fetch('/kb_list')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.knowledge_base_ids) {
+                        data.knowledge_base_ids.forEach(id => {
+                            const option = document.createElement('option');
+                            option.value = id;
+                            option.textContent = id;
+                            kbSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(err => console.error('Failed to load KB IDs', err));
+        }
+
         function performSearch() {
             const query = searchInput.value.trim();
             if (!query) return;
+
+            const kbId = kbSelect.value;
             
             loadingDiv.style.display = 'block';
             resultsDiv.innerHTML = '';
@@ -55,7 +78,7 @@
                 },
                 body: JSON.stringify({
                     query: query,
-                    knowledge_base_id: "96c3b9a4-10c1-400c-9d22-3e71cb8ed7fb",
+                    knowledge_base_id: kbId,
                     top_k: 5
                 })
             })
