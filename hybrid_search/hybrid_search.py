@@ -2,6 +2,9 @@
 import os
 import re
 import logging
+
+# Directory used for storing session context files
+SESSION_CONTEXT_DIR = os.environ.get("SESSION_CONTEXT_DIR", "/tmp/jarvis_sessions")
 try:
     from neo4j import GraphDatabase
 except ImportError:  # pragma: no cover - optional dependency
@@ -510,7 +513,8 @@ class HybridSearch:
         """Get the current knowledge base context for a session"""
         # This would typically be retrieved from a database or cache
         # For now, we'll use a simple file-based approach
-        context_file = f"/tmp/jarvis_kb_context_{session_id}.json"
+        os.makedirs(SESSION_CONTEXT_DIR, exist_ok=True)
+        context_file = os.path.join(SESSION_CONTEXT_DIR, f"jarvis_kb_context_{session_id}.json")
         
         try:
             if os.path.exists(context_file):
@@ -524,7 +528,8 @@ class HybridSearch:
     
     def set_current_kb_context(self, session_id, kb_id):
         """Set the current knowledge base context for a session"""
-        context_file = f"/tmp/jarvis_kb_context_{session_id}.json"
+        os.makedirs(SESSION_CONTEXT_DIR, exist_ok=True)
+        context_file = os.path.join(SESSION_CONTEXT_DIR, f"jarvis_kb_context_{session_id}.json")
         
         try:
             with open(context_file, 'w') as f:

@@ -20,6 +20,12 @@ MILVUS_PORT = os.environ.get("MILVUS_PORT", "19530")
 OLLAMA_API_BASE_URL = os.environ.get("OLLAMA_API_BASE_URL", "http://ollama:11434")
 OPENWEBUI_API_BASE_URL = os.environ.get("OPENWEBUI_API_BASE_URL", "http://open-webui:8080")
 
+# Feature flags and limits
+ENABLE_KB_DISCOVERY = os.environ.get("ENABLE_KB_DISCOVERY", "true").lower() == "true"
+ENABLE_MULTI_KB_SEARCH = os.environ.get("ENABLE_MULTI_KB_SEARCH", "true").lower() == "true"
+MAX_RESULTS_PER_KB = int(os.environ.get("MAX_RESULTS_PER_KB", "5"))
+MAX_TOTAL_RESULTS = int(os.environ.get("MAX_TOTAL_RESULTS", "10"))
+
 try:
     hybrid_search = HybridSearch(
         neo4j_uri=NEO4J_URI,
@@ -59,9 +65,21 @@ def proxy(path):
             or os.environ.get("DEFAULT_KB_ID")
         )
 
-        if user_message and kb_id:
+        if user_message:
+            # Auto-detect KB if none provided
+            if not kb_id and ENABLE_KB_DISCOVERY:
+                try:
+                    kb_id = hybrid_search.detect_kb_from_query(user_message)
+                except Exception as exc:
+                    logger.error("KB discovery failed: %s", exc)
+
             try:
-                results = hybrid_search.hybrid_search(user_message, kb_id, top_k=3)
+                results = []
+                if kb_id:
+                    results = hybrid_search.hybrid_search(user_message, kb_id, top_k=MAX_RESULTS_PER_KB)
+                elif ENABLE_MULTI_KB_SEARCH:
+                    results = hybrid_search.search_across_all_kbs(user_message, top_k=MAX_TOTAL_RESULTS)
+
                 context_parts = [r.get("content", "") for r in results if r.get("content")]
                 if context_parts:
                     options = data.setdefault("options", {})
