@@ -330,7 +330,7 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 *   `PROCESSING_BATCH_SIZE`: How many chunks to embed at once (default: 16)
 *   `PROCESSED_DIR`: Directory where processed documents are stored (default: `/processed`)
 *   `CONFIG_DIR`: Directory for persistent configuration files (default: `/app/config`)
-*   `JARVIS_LOG_DIR`: Directory for document processor logs (default: `<repo>/logs`)
+*   `JARVIS_LOG_DIR`: Directory for document processor logs (default: `<repo>/logs`, where `<repo>` refers to the root directory of the cloned repository or the application’s working directory inside the container)
 
 #### Proxy Settings
 
