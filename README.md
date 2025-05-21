@@ -200,7 +200,7 @@ Installation
 
 ### Step 1: Clone the Repository
 
-    git clone https://github.com/yourusername/jarvisai.git
+    git clone https://github.com/AnubissBE/jarvisai.git
     cd jarvisai
 
 ### Step 2: Set Up Environment Variables
