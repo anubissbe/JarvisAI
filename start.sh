@@ -268,26 +268,16 @@ setup_jarvis_model() {
     
     # Create the Jarvis model
     echo -e "${YELLOW}Creating Jarvis model from Modelfile...${NC}"
-    
-    # Using local file instead of base64 for better compatibility
+
+    # Use docker cp and docker exec as described in StillToDoManual.md
     if [ -f Modelfile ]; then
-        # Build Modelfile content for JSON payload
-        # Convert newlines to spaces and escape quotes to avoid API errors
-        modelfile_contents=$(cat Modelfile | sed 's/"/\\"/g' | tr '\n' ' ')
-        create_attempts=0
-        create_success=false
-        while [ $create_attempts -lt 3 ]; do
-            curl -f -s -X POST "http://localhost:11434/api/create" \
-                -H "Content-Type: application/json" \
-                -d "{\"name\": \"jarvis\", \"modelfile\": \"${modelfile_contents}\"}" && create_success=true && break
-            echo -e "\n${RED}Failed to create Jarvis model (attempt $((create_attempts+1))).${NC}"
-            create_attempts=$((create_attempts+1))
-            sleep 5
-        done
-        if [ "$create_success" = true ]; then
-            echo -e "\n${GREEN}Jarvis model creation initiated. This may take some time to complete.${NC}"
+        echo -e "${YELLOW}Copying Modelfile to Ollama container...${NC}"
+        docker cp Modelfile ollama:/tmp/Modelfile
+        echo -e "${YELLOW}Building model inside the container...${NC}"
+        if docker exec ollama ollama create jarvis -f /tmp/Modelfile; then
+            echo -e "${GREEN}Jarvis model created successfully.${NC}"
         else
-            echo -e "\n${RED}Unable to create Jarvis model after $create_attempts attempts.${NC}"
+            echo -e "${RED}Failed to create Jarvis model inside the container.${NC}"
             return 1
         fi
     else
