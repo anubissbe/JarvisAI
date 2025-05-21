@@ -45,6 +45,11 @@ except ImportError:  # pragma: no cover - optional dependency
     Collection = None
     utility = None
 
+# Ensure the packaged hybrid_search module is discoverable
+jarvis_path = "/opt/jarvis"
+if jarvis_path not in sys.path:
+    sys.path.insert(0, jarvis_path)
+
 # Ensure repository root is in import path
 repo_root = os.path.dirname(os.path.abspath(__file__))
 if repo_root not in sys.path:
