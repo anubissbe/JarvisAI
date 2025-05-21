@@ -490,9 +490,24 @@ class HybridSearch:
             return None
 
         try:
+            ctx_env = os.environ.get("OLLAMA_CONTEXT_LENGTH", "2048")
+            try:
+                ctx = int(ctx_env)
+            except ValueError:
+                logger.warning(
+                    f"OLLAMA_CONTEXT_LENGTH '{ctx_env}' is not an integer; using default 2048"
+                )
+                ctx = 2048
+
+            payload = {
+                "model": self.model,
+                "prompt": text,
+                "options": {"num_ctx": ctx}
+            }
+
             response = requests.post(
                 f"{self.ollama_url}/api/embeddings",
-                json={"model": self.model, "prompt": text}
+                json=payload
             )
             
             if response.status_code == 200:
