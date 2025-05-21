@@ -2,18 +2,14 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies with specific versions for consistency
+RUN pip install --no-cache-dir flask==2.3.3 requests==2.31.0 neo4j==5.12.0 pymilvus==2.3.3
 
 # Copy application code
 COPY . .
-
-# Ensure the shared hybrid_search module is discoverable
-ENV PYTHONPATH="/opt/jarvis:$PYTHONPATH"
 
 # Expose the proxy port
 EXPOSE 11435
 
 # Command to run the proxy
-CMD ["python", "/app/ollama_proxy.py"]
+CMD ["python", "ollama_proxy.py"]
