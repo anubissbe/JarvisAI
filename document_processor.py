@@ -153,6 +153,7 @@ class DocumentProcessor:
             logger.error(f"Failed to initialize HybridSearch: {str(e)}")
             logger.error(traceback.format_exc())
             self.searcher = None
+            logger.warning("Using local KB ID generation due to HybridSearch initialization failure")
             
         # Get or create dynamic default KB ID
         self.default_kb_id = self.get_or_create_default_kb()
@@ -286,9 +287,12 @@ class DocumentProcessor:
     def extract_knowledge(self, text, document_title):
         """Extract entities, concepts, and relationships from text"""
         logger.info(f"Extracting knowledge from document: {document_title}")
-        
+
+        # Get max text size from environment or use default
+        max_text_size = int(os.environ.get("MAX_TEXT_PROCESSING_SIZE", "100000"))
+
         # Process the text with spaCy if available
-        doc = nlp(text[:100000]) if nlp else None  # Limit to avoid memory issues
+        doc = nlp(text[:max_text_size]) if nlp else None  # Limit to avoid memory issues
         
         # Extract entities
         entities = []
