@@ -581,6 +581,21 @@ If containers can't access GPUs:
 1.  Verify NVIDIA drivers are installed: `nvidia-smi`
 2.  Check NVIDIA Container Toolkit: `docker run --gpus all nvidia/cuda:11.0-base nvidia-smi`
 
+#### Low GPU Usage
+
+If GPU usage appears unexpectedly low:
+
+1.  Check GPU visibility from inside the container:
+
+        docker-compose exec [service_name] nvidia-smi
+
+    Ensure the device is detected and drivers are loaded.
+2.  Verify GPU environment settings:
+
+        docker-compose exec [service_name] bash -c 'echo $OLLAMA_GPU_LAYERS $CUDA_VISIBLE_DEVICES'
+
+    Adjust `OLLAMA_GPU_LAYERS` or `CUDA_VISIBLE_DEVICES` in your `docker-compose.yml` if needed.
+
 #### Document Processing Issues
 
 If documents aren't being processed:
