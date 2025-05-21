@@ -324,6 +324,7 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 *   `ENABLE_MULTI_KB_SEARCH`: Search across multiple knowledge bases (default: true)
 *   `MAX_RESULTS_PER_KB`: Maximum results per knowledge base (default: 5)
 *   `OLLAMA_URL`: Base URL for the embedding service used by the document processor
+*   `SPACY_MODEL`: spaCy language model to load (default: `en_core_web_lg`)
 
 #### Proxy Settings
 
