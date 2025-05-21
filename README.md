@@ -307,7 +307,7 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 
 #### Ollama Settings
 
-* `OLLAMA_URL` – base URL for the Ollama API
+* `OLLAMA_URL` – base URL used by the document processor for generating embeddings
 *   `OLLAMA_NUM_PARALLEL`: Number of parallel requests allowed (default: 4)
 *   `OLLAMA_MAX_LOADED_MODELS`: Maximum models to keep loaded (default: 2)
 *   `OLLAMA_CONTEXT_LENGTH`: Maximum context length (default: 262144)
