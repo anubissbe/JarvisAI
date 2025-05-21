@@ -311,8 +311,8 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 *   `OLLAMA_NUM_PARALLEL`: Number of parallel requests allowed (default: 4)
 *   `OLLAMA_MAX_LOADED_MODELS`: Maximum models to keep loaded (default: 2)
 *   `OLLAMA_CONTEXT_LENGTH`: Context size passed to the embedding service. Set this
-    to a value supported by your model (default: 262144). For example, the
-    `nomic-embed-text` model works with `2048`.
+    to a value supported by your model (default: 2048). The `nomic-embed-text`
+    model expects up to 2048 tokens.
 
 #### Vector Search Settings
 
