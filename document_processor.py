@@ -54,7 +54,7 @@ from hybrid_search import HybridSearch
 # Determine repository root for logs
 repo_root = os.path.dirname(os.path.abspath(__file__))
 # Log directory can be overridden via env var, default to repo/logs
-log_dir = os.environ.get("JARVIS_LOG_DIR", os.path.join(repo_root, "logs"))
+log_dir = os.environ.get("LOG_DIR", os.path.join(repo_root, "logs"))
 os.makedirs(log_dir, exist_ok=True)
 
 # Configure logging with fallback if file handler fails
