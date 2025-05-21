@@ -669,4 +669,8 @@ JarvisAI can be extended in several ways:
 *   Integrating with other LLM providers
 *   Adding visualization capabilities for the knowledge graph
 
+### License
+
+JarvisAI is distributed under the [MIT License](LICENSE).
+
 Created by [AnubissBE](https://github.com/AnubissBE)
