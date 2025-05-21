@@ -76,4 +76,5 @@ if FLASK_AVAILABLE:
         return jsonify({"error": "Chat endpoint not available"}), 501
 
 if FLASK_AVAILABLE and __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
