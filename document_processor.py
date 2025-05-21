@@ -104,6 +104,9 @@ class DocumentProcessor:
         self.uploads_dir = os.environ.get("UPLOADS_DIR", "/app/backend/data/uploads")
         self.processed_dir = os.environ.get("PROCESSED_DIR", "/processed")
         self.config_dir = os.environ.get("CONFIG_DIR", "/app/config")
+        self.chunk_size = int(os.environ.get("DOCUMENT_CHUNK_SIZE", "1536"))
+        self.chunk_overlap = int(os.environ.get("DOCUMENT_CHUNK_OVERLAP", "256"))
+        self.processing_batch_size = int(os.environ.get("PROCESSING_BATCH_SIZE", "16"))
         
         # Create necessary directories
         os.makedirs(self.processed_dir, exist_ok=True)
@@ -254,6 +257,20 @@ class DocumentProcessor:
             except Exception as e:
                 logger.error(f"Error extracting text with pytextract: {str(e)}")
                 return ""
+
+    def chunk_text(self, text):
+        """Split text into overlapping chunks"""
+        chunks = []
+        if self.chunk_size <= 0:
+            return [text]
+        step = self.chunk_size - self.chunk_overlap
+        if step <= 0:
+            step = self.chunk_size
+        for start in range(0, len(text), step):
+            chunk = text[start : start + self.chunk_size]
+            if chunk:
+                chunks.append(chunk)
+        return chunks
     
     def extract_knowledge(self, text, document_title):
         """Extract entities, concepts, and relationships from text"""
@@ -993,21 +1010,23 @@ class DocumentProcessor:
                 logger.error(f"Failed to extract text from document: {document_title}")
                 return False
             
-            # Generate vector embedding and store in Milvus
-            embedding = None
-            if self.searcher:
-                if self.searcher._initialize_vector_collection(kb_id):
-                    embedding = self.searcher._get_embedding(text)
-                    if embedding is not None:
-                        self.add_vector_to_milvus(
-                            document_title,
-                            file_path,
-                            text,
-                            kb_id,
-                            embedding,
-                        )
-                else:
-                    logger.error(f"Failed to initialize vector collection for KB: {kb_id}")
+            # Generate vector embeddings per chunk and store in Milvus
+            if self.searcher and self.searcher._initialize_vector_collection(kb_id):
+                chunks = self.chunk_text(text)
+                for i in range(0, len(chunks), self.processing_batch_size):
+                    batch = chunks[i : i + self.processing_batch_size]
+                    for chunk in batch:
+                        embedding = self.searcher._get_embedding(chunk)
+                        if embedding is not None:
+                            self.add_vector_to_milvus(
+                                document_title,
+                                file_path,
+                                chunk,
+                                kb_id,
+                                embedding,
+                            )
+            elif self.searcher:
+                logger.error(f"Failed to initialize vector collection for KB: {kb_id}")
 
             # Extract technical knowledge (original functionality)
             technical_knowledge = self.extract_knowledge(text, document_title)
