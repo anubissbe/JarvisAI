@@ -17,8 +17,8 @@ if FLASK_AVAILABLE:
 neo4j_uri = os.environ.get('NEO4J_URI', 'bolt://localhost:7687')
 neo4j_user = os.environ.get('NEO4J_USER', 'neo4j')
 neo4j_password = os.environ.get('NEO4J_PASSWORD')
-if neo4j_password is None:
-    raise RuntimeError('NEO4J_PASSWORD environment variable not set')
+if not neo4j_password:
+    raise RuntimeError('NEO4J_PASSWORD environment variable not set or empty')
 milvus_host = os.environ.get('MILVUS_HOST', 'localhost')
 milvus_port = os.environ.get('MILVUS_PORT', '19530')
 ollama_url = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
