@@ -113,7 +113,9 @@ class DocumentProcessor:
         # Configuration
         self.neo4j_uri = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
         self.neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
-        self.neo4j_password = os.environ.get("NEO4J_PASSWORD", "VerySecurePassword")
+        self.neo4j_password = os.environ.get("NEO4J_PASSWORD")
+        if self.neo4j_password is None:
+            raise RuntimeError("NEO4J_PASSWORD environment variable not set")
         self.milvus_host = MILVUS_HOST
         self.milvus_port = MILVUS_PORT
         self.ollama_url = OLLAMA_URL

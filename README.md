@@ -302,7 +302,7 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 #### Database Connection Settings
 
 * `NEO4J_URI` – address of the Neo4j database
-* `NEO4J_USER` / `NEO4J_PASSWORD` – credentials for Neo4j
+* `NEO4J_USER` / `NEO4J_PASSWORD` – credentials for Neo4j. `NEO4J_PASSWORD` must be supplied via environment or `.env`.
 * `MILVUS_HOST` / `MILVUS_PORT` – location of the Milvus vector store
 
 #### Ollama Settings
@@ -610,7 +610,7 @@ Security Notes
 
 **Important Security Considerations:**
 
-*   **Password Security**: The default passwords in the configuration files should be changed before deploying in a production environment.
+*   **Password Security**: Set `NEO4J_PASSWORD` in your environment or `.env` file. Default passwords have been removed from the configuration.
 *   **Exposed Ports**: By default, several services expose ports that should be properly secured if the system is accessible beyond your local network.
 *   **Personal Data**: The system extracts and stores personal information from documents. Ensure compliance with privacy regulations if processing sensitive data.
 *   **Network Isolation**: Consider using Docker network isolation to restrict external access to internal services.

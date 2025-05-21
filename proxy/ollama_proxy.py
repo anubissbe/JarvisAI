@@ -18,7 +18,9 @@ logger = logging.getLogger("ollama_proxy")
 # Connection details from environment variables
 NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "VerySecurePassword")
+NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD")
+if NEO4J_PASSWORD is None:
+    raise RuntimeError("NEO4J_PASSWORD environment variable not set")
 MILVUS_HOST = os.environ.get("MILVUS_HOST", "milvus-standalone")
 MILVUS_PORT = os.environ.get("MILVUS_PORT", "19530")
 OLLAMA_API_BASE_URL = os.environ.get("OLLAMA_API_BASE_URL", "http://ollama:11434")
