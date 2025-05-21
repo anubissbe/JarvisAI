@@ -499,10 +499,19 @@ class HybridSearch:
                 )
                 ctx = 2048
 
+            # Truncate long prompts to avoid server errors when context is exceeded
+            max_chars = ctx * 4  # Rough approximation of token to char ratio
+            if len(text) > max_chars:
+                logger.warning(
+                    "Prompt too long for configured context; truncating to %d characters",
+                    max_chars,
+                )
+                text = text[:max_chars]
+
             payload = {
                 "model": self.model,
                 "prompt": text,
-                "options": {"num_ctx": ctx}
+                "options": {"num_ctx": ctx},
             }
 
             response = requests.post(
