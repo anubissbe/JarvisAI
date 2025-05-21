@@ -776,7 +776,7 @@ class DocumentProcessor:
                 if len(path_parts) > uploads_index + 1:
                     kb_id = path_parts[uploads_index + 1]
                     # Validate that it looks like a UUID (simple check)
-                    if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', kb_id):
+                    if re.match(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', kb_id):
                         logger.info(f"Extracted KB ID from path: {kb_id}")
                         return kb_id
             
@@ -1117,7 +1117,7 @@ class DocumentProcessor:
                     item_path = os.path.join(self.uploads_dir, item)
                     if os.path.isdir(item_path):
                         # Check if the directory name looks like a UUID (KB ID)
-                        if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', item):
+                        if re.match(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', item):
                             kb_ids.add(item)
                         
                         # Also check for .kb_config files
