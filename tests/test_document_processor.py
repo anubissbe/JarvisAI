@@ -32,5 +32,6 @@ class TestExtractKbId(unittest.TestCase):
         kb_id = self.processor.extract_kb_id_from_path(path)
         self.assertEqual(kb_id, uuid_upper)
 
+
 if __name__ == '__main__':
     unittest.main()
