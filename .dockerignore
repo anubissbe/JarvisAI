@@ -1,0 +1,35 @@
+# Ignore volume directories and logs
+volumes/
+logs/
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment and virtualenv directories
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Database and log files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Configuration files containing secrets
+config/kb_default_config.json
+
+# Docker volumes
+docker-volumes/
+
+# OS generated files
+.DS_Store
+
+# Optional editor directories
+.vscode/
+.idea/
