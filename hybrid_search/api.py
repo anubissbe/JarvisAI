@@ -80,7 +80,7 @@ if FLASK_AVAILABLE:
             })
         except Exception as e:
             return jsonify({"status": "error", "error": str(e)}), 500
-# Chat endpoint stub (disabled due to missing proper indentation)
+# Chat endpoint stub (not yet implemented)
 if FLASK_AVAILABLE:
     @app.route('/chat', methods=['POST'])
     def chat():
