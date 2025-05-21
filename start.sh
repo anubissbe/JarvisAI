@@ -184,7 +184,18 @@ setup_environment() {
     else
         echo -e "${GREEN}.env file already exists.${NC}"
     fi
-    
+
+    # Check for NEO4J_PASSWORD in environment or .env
+    NEO4J_PW_VALUE="${NEO4J_PASSWORD}"
+    if [ -z "$NEO4J_PW_VALUE" ] && [ -f .env ]; then
+        NEO4J_PW_VALUE=$(grep -E '^NEO4J_PASSWORD=' .env | cut -d '=' -f2-)
+    fi
+    if [ -z "$NEO4J_PW_VALUE" ]; then
+        echo -e "${RED}NEO4J_PASSWORD is not set.${NC}"
+        echo -e "${YELLOW}Please set NEO4J_PASSWORD in your environment or in the .env file before running this script.${NC}"
+        exit 1
+    fi
+
     # Ensure directory structure exists
     mkdir -p volumes/processed_documents logs tmp config hybrid_search proxy
     echo -e "${GREEN}Directory structure created.${NC}"
