@@ -325,6 +325,12 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 *   `MAX_RESULTS_PER_KB`: Maximum results per knowledge base (default: 5)
 *   `OLLAMA_URL`: Base URL for the embedding service used by the document processor
 *   `SPACY_MODEL`: spaCy language model to load (default: `en_core_web_lg`)
+*   `DOCUMENT_CHUNK_SIZE`: Number of characters per chunk when splitting documents (default: 1536)
+*   `DOCUMENT_CHUNK_OVERLAP`: Number of overlapping characters between chunks (default: 256)
+*   `PROCESSING_BATCH_SIZE`: How many chunks to embed at once (default: 16)
+*   `PROCESSED_DIR`: Directory where processed documents are stored (default: `/processed`)
+*   `CONFIG_DIR`: Directory for persistent configuration files (default: `/app/config`)
+*   `JARVIS_LOG_DIR`: Directory for document processor logs (default: `<repo>/logs`)
 
 #### Proxy Settings
 
