@@ -65,7 +65,7 @@ services:
       # Embedding Configuration
       - EMBEDDING_MODEL=nomic-embed-text
       - EMBEDDING_PROVIDER=ollama
-      - EMBEDDING_MODEL_ENDPOINT=http://ollama:11434
+      - EMBEDDING_MODEL_ENDPOINT=http://ollama-proxy:11435
       - EMBEDDING_DIMENSIONS=768
       - EMBEDDING_BATCH_SIZE=64
       # Performance optimizations
