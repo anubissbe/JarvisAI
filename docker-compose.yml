@@ -205,7 +205,6 @@ services:
       - open-webui-data:/app/backend/data
       - ./hybrid_search:/opt/jarvis/hybrid_search
       - ./logs:/var/log/jarvis
-      - ./tmp:/tmp/jarvis_sessions
       - ./config:/app/config
     env_file:
       - ./jarvis_kb_config.env
