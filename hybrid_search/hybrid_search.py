@@ -81,7 +81,7 @@ class HybridSearch:
         self.model = "nomic-embed-text"
 
         # Embedding dimension configuration
-        env_dim = os.environ.get("EMBEDDING_DIM") or os.environ.get("EMBEDDING_DIMENSIONS")
+        env_dim = os.environ.get("EMBEDDING_DIM")
         try:
             self.embedding_dim = int(env_dim) if env_dim else 768
         except ValueError:

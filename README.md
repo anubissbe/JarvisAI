@@ -316,7 +316,7 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 
 *   `MILVUS_INDEX_TYPE`: Index type for vector search (default: HNSW)
 *   `MILVUS_METRIC_TYPE`: Similarity metric type (default: COSINE)
-*   `EMBEDDING_DIMENSIONS`: Dimensions of embeddings (default: 768)
+*   `EMBEDDING_DIM`: Dimensions of embeddings (default: 768)
 
 #### Document Processing Settings
 
