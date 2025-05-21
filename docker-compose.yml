@@ -51,6 +51,9 @@ services:
       - WEBUI_AUTH=True
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-your_secure_secret_key_here}
 
+      # API Configuration
+      - OPENWEBUI_API_BASE_URL=http://open-webui:8080
+
       # RAG Configuration
       - ENABLE_RAG=True
       - VECTOR_DB=milvus
