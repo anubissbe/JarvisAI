@@ -9,6 +9,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Ensure the shared hybrid_search module is discoverable
+ENV PYTHONPATH="/opt/jarvis:$PYTHONPATH"
+
 # Expose the proxy port
 EXPOSE 11435
 
