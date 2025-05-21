@@ -34,7 +34,6 @@ except ImportError:  # pragma: no cover - optional dependency
 import logging
 from datetime import datetime
 import sys
-import io
 import re
 import json
 import traceback
