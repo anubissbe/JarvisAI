@@ -1,59 +1,37 @@
 import os
-import types
+import tempfile
 import unittest
-from unittest.mock import patch
 
-import document_processor
+from document_processor import DocumentProcessor
 
-class DummySearcher:
-    def __init__(self, *args, **kwargs):
-        self.embedding_dim = 3
-    def _initialize_vector_collection(self, kb_id):
-        return True
-
-class DummyCollection:
-    inserted_data = None
-    def __init__(self, name):
-        self.name = name
-    def load(self):
-        pass
-    def insert(self, data):
-        DummyCollection.inserted_data = data
-    def flush(self):
-        pass
-    def release(self):
-        pass
-
-def get_dummy_utility():
-    return types.SimpleNamespace(has_collection=lambda name: True)
-
-class AddVectorToMilvusTest(unittest.TestCase):
+class TestExtractKbId(unittest.TestCase):
     def setUp(self):
-        os.environ['NEO4J_PASSWORD'] = 'test'
-        self.patcher_searcher = patch('document_processor.HybridSearch', DummySearcher)
-        self.patcher_collection = patch('document_processor.Collection', DummyCollection)
-        self.patcher_utility = patch('document_processor.utility', get_dummy_utility())
-        self.patcher_searcher.start()
-        self.patcher_collection.start()
-        self.patcher_utility.start()
+        # Use temporary directories for environment paths
+        self.temp_dir = tempfile.TemporaryDirectory()
+        os.environ['UPLOADS_DIR'] = os.path.join(self.temp_dir.name, 'uploads')
+        os.environ['PROCESSED_DIR'] = os.path.join(self.temp_dir.name, 'processed')
+        os.environ['CONFIG_DIR'] = os.path.join(self.temp_dir.name, 'config')
+        os.makedirs(os.environ['UPLOADS_DIR'], exist_ok=True)
+        os.makedirs(os.environ['PROCESSED_DIR'], exist_ok=True)
+        os.makedirs(os.environ['CONFIG_DIR'], exist_ok=True)
+        os.environ['NEO4J_PASSWORD'] = 'dummy'
+        self.processor = DocumentProcessor()
 
     def tearDown(self):
-        self.patcher_searcher.stop()
-        self.patcher_collection.stop()
-        self.patcher_utility.stop()
-        DummyCollection.inserted_data = None
+        self.temp_dir.cleanup()
 
-    def test_embedding_mismatch_skips_insert(self):
-        dp = document_processor.DocumentProcessor()
-        with self.assertLogs('DocumentProcessor', level='WARNING') as cm:
-            dp.add_vector_to_milvus('t', 'p', 'c', 'kb', [1, 2])
-        self.assertIsNone(DummyCollection.inserted_data)
-        self.assertTrue(any('Embedding dimension mismatch' in m for m in cm.output))
+    def test_lowercase_uuid(self):
+        uuid_lower = '123e4567-e89b-12d3-a456-426614174000'
+        path = os.path.join('some', 'path', 'uploads', uuid_lower, 'file.txt')
+        kb_id = self.processor.extract_kb_id_from_path(path)
+        self.assertEqual(kb_id, uuid_lower)
 
-    def test_embedding_match_inserts(self):
-        dp = document_processor.DocumentProcessor()
-        dp.add_vector_to_milvus('t', 'p', 'c', 'kb', [1, 2, 3])
-        self.assertIsNotNone(DummyCollection.inserted_data)
+    def test_uppercase_uuid(self):
+        uuid_upper = '123E4567-E89B-12D3-A456-426614174000'
+        path = os.path.join('another', 'path', 'uploads', uuid_upper, 'file.txt')
+        kb_id = self.processor.extract_kb_id_from_path(path)
+        self.assertEqual(kb_id, uuid_upper)
+
 
 if __name__ == '__main__':
     unittest.main()

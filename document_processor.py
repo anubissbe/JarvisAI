@@ -34,7 +34,6 @@ except ImportError:  # pragma: no cover - optional dependency
 import logging
 from datetime import datetime
 import sys
-import io
 import re
 import json
 import traceback
@@ -171,6 +170,16 @@ class DocumentProcessor:
         config_path = os.path.join(self.config_dir, "kb_default_config.json")
         
         try:
+            # Step 0: Check environment variable
+            env_kb = os.environ.get("DEFAULT_KB_ID")
+            if env_kb:
+                try:
+                    uuid.UUID(str(env_kb))
+                    logger.info(f"Using default KB ID from environment: {env_kb}")
+                    return env_kb
+                except Exception:
+                    logger.warning("Ignoring invalid DEFAULT_KB_ID environment variable")
+
             # Step 1: Try to read from persistent config file
             if os.path.exists(config_path):
                 with open(config_path, 'r') as f:
@@ -776,7 +785,7 @@ class DocumentProcessor:
                 if len(path_parts) > uploads_index + 1:
                     kb_id = path_parts[uploads_index + 1]
                     # Validate that it looks like a UUID (simple check)
-                    if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', kb_id):
+                    if re.match(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', kb_id):
                         logger.info(f"Extracted KB ID from path: {kb_id}")
                         return kb_id
             
@@ -1125,7 +1134,7 @@ class DocumentProcessor:
                     item_path = os.path.join(self.uploads_dir, item)
                     if os.path.isdir(item_path):
                         # Check if the directory name looks like a UUID (KB ID)
-                        if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', item):
+                        if re.match(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', item):
                             kb_ids.add(item)
                         
                         # Also check for .kb_config files
