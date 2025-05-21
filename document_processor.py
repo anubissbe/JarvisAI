@@ -66,8 +66,18 @@ try:
 except Exception as e:
     print(f"Warning: could not open log file {log_file}: {e}", file=sys.stderr)
 handlers.append(logging.StreamHandler())
+
+# Determine logging level from environment
+log_level_str = os.environ.get("LOG_LEVEL", "INFO").upper()
+log_level = getattr(logging, log_level_str, logging.INFO)
+if log_level is logging.INFO and log_level_str not in logging._nameToLevel:
+    print(
+        f"Warning: invalid LOG_LEVEL '{log_level_str}', defaulting to INFO",
+        file=sys.stderr,
+    )
+
 logging.basicConfig(
-    level=logging.INFO,
+    level=log_level,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=handlers
 )
