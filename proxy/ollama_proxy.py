@@ -2,6 +2,10 @@ from flask import Flask, request, jsonify, Response, stream_with_context
 import logging
 import os
 import requests
+import sys
+
+# Ensure the shared hybrid_search module can be located
+sys.path.append("/opt/jarvis")
 from hybrid_search import HybridSearch
 
 app = Flask(__name__)
