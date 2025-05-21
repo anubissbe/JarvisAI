@@ -5,6 +5,7 @@ import hashlib
 MILVUS_HOST=os.getenv("MILVUS_HOST","milvus-standalone")
 MILVUS_PORT=os.getenv("MILVUS_PORT","19530")
 OLLAMA_URL=os.getenv("OLLAMA_URL","http://ollama:11434")
+SPACY_MODEL=os.getenv("SPACY_MODEL","en_core_web_lg")
 try:
     import spacy
 except ImportError:  # pragma: no cover - optional dependency
@@ -77,7 +78,7 @@ if spacy is not None:
     try:
         # Prefer running on GPU if available
         spacy.prefer_gpu()
-        nlp = spacy.load("en_core_web_lg")
+        nlp = spacy.load(SPACY_MODEL)
         logger.info("Loaded spaCy NLP model successfully")
     except Exception as e:
         logger.error(f"Error loading spaCy model: {str(e)}")
