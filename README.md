@@ -353,7 +353,7 @@ The LLM is configured in the `Modelfile`. You can modify this file to change LLM
 For systems with two NVIDIA V100 GPUs and high core-count CPUs, adjust the following settings for best performance:
 
 * `OLLAMA_NUM_THREADS=24` in `docker-compose.yml` to match the available CPU threads.
-* `WEBUI_WORKERS=24` in `docker-compose.yml` for improved concurrency in the web interface.
+* `WEBUI_WORKERS=${WEBUI_WORKERS:-4}` in `docker-compose.yml` for improved concurrency in the web interface (adjust the `WEBUI_WORKERS` environment variable to tune performance).
 * `num_thread 24` in the `Modelfile` to fully utilise the CPU when generating responses.
 
 These values can be tweaked further depending on your exact workload and resource availability.

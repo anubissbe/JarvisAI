@@ -67,7 +67,7 @@ services:
       - EMBEDDING_DIMENSIONS=768
       - EMBEDDING_BATCH_SIZE=64
       # Performance optimizations
-      - WEBUI_WORKERS=24
+      - WEBUI_WORKERS=${WEBUI_WORKERS:-4}
     networks:
       - jarvis-net
 
