@@ -273,8 +273,7 @@ EMBEDDING_MODEL=nomic-embed-text
 
 **Warning:** Initial startup may take considerable time (30+ minutes) as models are downloaded and containers are initialized.
 
-### Step 4: Verify Installation
-#### Step 4: Create the Jarvis Model
+### Step 4: Create the Jarvis Model
 
 Wait for Ollama to start, then create the Jarvis model:
 
@@ -282,7 +281,7 @@ Wait for Ollama to start, then create the Jarvis model:
         -H "Content-Type: application/json" \
         -d "{\"name\": \"jarvis\", \"modelfile\": \"$(cat Modelfile | sed 's/"/\\"/g' | tr '\n' ' ')\"}"
 
-#### Step 5: Verify Installation
+### Step 5: Verify Installation
 
 Check if all services are running properly:
 
