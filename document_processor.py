@@ -918,7 +918,9 @@ class DocumentProcessor:
 
             # Create collection if it doesn't exist
             if not utility.has_collection(collection_name):
-                self.searcher._initialize_vector_collection(kb_id)
+                if not self.searcher._initialize_vector_collection(kb_id):
+                    logger.error(f"Failed to initialize Milvus collection for KB: {kb_id}")
+                    return
 
             collection = Collection(collection_name)
             collection.load()
@@ -932,11 +934,18 @@ class DocumentProcessor:
             ]
             collection.insert(data)
             collection.flush()
-            collection.release()
-            logger.info(f"Inserted vector for {title} into Milvus collection {collection_name}")
+            logger.info(
+                f"Inserted vector for {title} into Milvus collection {collection_name}"
+            )
         except Exception as e:
             logger.error(f"Error inserting vector into Milvus: {str(e)}")
             logger.error(traceback.format_exc())
+        finally:
+            try:
+                if 'collection' in locals():
+                    collection.release()
+            except Exception:
+                pass
     
     def process_document(self, file_path):
         """Process a document and add its knowledge to Neo4j"""
@@ -970,9 +979,18 @@ class DocumentProcessor:
             # Generate vector embedding and store in Milvus
             embedding = None
             if self.searcher:
-                embedding = self.searcher._get_embedding(text)
-            if embedding:
-                self.add_vector_to_milvus(document_title, file_path, text, kb_id, embedding)
+                if self.searcher._initialize_vector_collection(kb_id):
+                    embedding = self.searcher._get_embedding(text)
+                    if embedding is not None:
+                        self.add_vector_to_milvus(
+                            document_title,
+                            file_path,
+                            text,
+                            kb_id,
+                            embedding,
+                        )
+                else:
+                    logger.error(f"Failed to initialize vector collection for KB: {kb_id}")
 
             # Extract technical knowledge (original functionality)
             technical_knowledge = self.extract_knowledge(text, document_title)
