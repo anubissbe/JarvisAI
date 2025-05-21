@@ -435,7 +435,6 @@ class DocumentProcessor:
         # Initialize results
         personal_entities = []
         personal_topics = []
-        personal_concepts = []
         personal_relationships = []
         
         # 1. PERSONAL IDENTIFIERS
