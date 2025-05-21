@@ -44,6 +44,11 @@ except Exception as exc:
 def proxy(path):
     logger.info("Received request for /api/%s (Method: %s)", path, request.method)
 
+    # Map deprecated /embed endpoint to /embeddings for compatibility
+    if path == 'embed':
+        logger.debug("Redirecting /api/embed to /api/embeddings")
+        path = 'embeddings'
+
     data = request.get_json(silent=True)
 
     # For chat requests, augment with hybrid search context
