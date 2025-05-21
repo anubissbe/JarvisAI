@@ -325,6 +325,7 @@ The main system configuration is in `docker-compose.yml` and `jarvis_kb_config.e
 *   `MAX_RESULTS_PER_KB`: Maximum results per knowledge base (default: 5)
 *   `OLLAMA_URL`: Base URL for the embedding service used by the document processor
 *   `SPACY_MODEL`: spaCy language model to load (default: `en_core_web_lg`)
+*   `LOG_DIR`: Directory where the document processor writes logs (default: `./logs`)
 
 #### Proxy Settings
 
