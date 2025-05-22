@@ -11,12 +11,13 @@ class TestAPIEndpoints(unittest.TestCase):
     def setUp(self):
         # Create a mock LLM service module
         self.mock_llm_service = MagicMock()
-        self.mock_llm_service.get_completion.return_value = "This is a test response"
+        self.mock_llm_service.get_completion = MagicMock(return_value="This is a test response")
         sys.modules['llm_service'] = self.mock_llm_service
         
         # Create a mock Flask app
         self.mock_app = MagicMock()
-        self.mock_app.test_client.return_value = MagicMock()
+        mock_client = MagicMock()
+        self.mock_app.test_client = MagicMock(return_value=mock_client)
         sys.modules['app'] = self.mock_app
         
     def test_chat_endpoint(self):
@@ -32,7 +33,7 @@ class TestAPIEndpoints(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.data = json.dumps({'response': "This is a test response"}).encode('utf-8')
-        client.post.return_value = mock_response
+        client.post = MagicMock(return_value=mock_response)
         
         # Send a request to the endpoint
         response = client.post('/api/chat', 

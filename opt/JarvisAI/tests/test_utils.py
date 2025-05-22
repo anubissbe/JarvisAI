@@ -12,7 +12,7 @@ class TestUtils(unittest.TestCase):
         with patch.dict('os.environ', {'OPENAI_API_KEY': 'test_key'}):
             # Mock the config module
             mock_config = MagicMock()
-            mock_config.get_openai_api_key.return_value = 'test_key'
+            mock_config.get_openai_api_key = MagicMock(return_value='test_key')
             sys.modules['config'] = mock_config
             
             # Test that we can access the mocked function
@@ -23,7 +23,7 @@ class TestUtils(unittest.TestCase):
         """Test file operations"""
         # Create a mock file operations module
         mock_file_ops = MagicMock()
-        mock_file_ops.read_file.return_value = 'test data'
+        mock_file_ops.read_file = MagicMock(return_value='test data')
         sys.modules['file_ops'] = mock_file_ops
         
         # Test the mocked function
