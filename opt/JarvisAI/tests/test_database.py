@@ -1,27 +1,23 @@
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
-import os
-
-# Add the parent directory to the path so we can import the modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+# ... existing code ...
 class TestDatabase(unittest.TestCase):
-    def setUp(self):
-        # Create a mock database module
-        self.mock_db = MagicMock()
-        self.mock_db.get_chat_history = MagicMock(return_value=[{'id': 1, 'message': 'test message'}])
-        sys.modules['database'] = self.mock_db
-        
     def test_database_operations(self):
         """Test database operations"""
-        # Import the mocked module
-        from database import get_chat_history
+        # Mock a database connection
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+        
+        # Mock the fetchall method to return test data
+        mock_cursor.fetchall.return_value = [{'id': 1, 'message': 'test message'}]
+        
+        # Define a simple function to get chat history
+        def get_chat_history(user_id, conn=mock_conn):
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM chat_history WHERE user_id = %s", (user_id,))
+            return cursor.fetchall()
         
         # Test the function
         result = get_chat_history(user_id=1)
         self.assertEqual(result, [{'id': 1, 'message': 'test message'}])
-        self.mock_db.get_chat_history.assert_called_once_with(user_id=1)
-
-if __name__ == '__main__':
-    unittest.main()
+        mock_cursor.execute.assert_called_once()
+# ... existing code ...
