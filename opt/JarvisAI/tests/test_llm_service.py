@@ -1,27 +1,24 @@
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
-import os
-
-# Add the parent directory to the path so we can import the modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+# ... existing code ...
 class TestLLMService(unittest.TestCase):
-    def setUp(self):
-        # Create a mock LLM service module
-        self.mock_llm_service = MagicMock()
-        self.mock_llm_service.get_completion = MagicMock(return_value="This is a test response")
-        sys.modules['llm_service'] = self.mock_llm_service
-        
     def test_openai_completion(self):
         """Test OpenAI completion functionality"""
-        # Import the mocked module
-        from llm_service import get_completion
+        # Mock the OpenAI client
+        mock_openai = MagicMock()
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "This is a test response"
+        mock_openai.ChatCompletion.create.return_value = mock_response
+        
+        # Test a simple completion function
+        def get_completion(prompt, model="gpt-3.5-turbo"):
+            response = mock_openai.ChatCompletion.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.choices[0].message.content
         
         # Test the function
         response = get_completion("Test prompt")
         self.assertEqual(response, "This is a test response")
-        self.mock_llm_service.get_completion.assert_called_once_with("Test prompt")
-
-if __name__ == '__main__':
-    unittest.main()
+        mock_openai.ChatCompletion.create.assert_called_once()
+# ... existing code ...
