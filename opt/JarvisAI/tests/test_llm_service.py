@@ -1,24 +1,26 @@
-# ... existing code ...
+import unittest
+from unittest.mock import patch, MagicMock
+import os
+import sys
+
+# Add the parent directory to sys.path to allow imports from the project root
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 class TestLLMService(unittest.TestCase):
-    def test_openai_completion(self):
+    @patch('opt.JarvisAI.services.llm_service.openai.ChatCompletion.create')
+    def test_openai_completion(self, mock_create):
         """Test OpenAI completion functionality"""
-        # Mock the OpenAI client
-        mock_openai = MagicMock()
+        # Setup mock
         mock_response = MagicMock()
-        mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.content = "This is a test response"
-        mock_openai.ChatCompletion.create.return_value = mock_response
+        mock_response.choices[0].message.content = "Test response"
+        mock_create.return_value = mock_response
         
-        # Test a simple completion function
-        def get_completion(prompt, model="gpt-3.5-turbo"):
-            response = mock_openai.ChatCompletion.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
+        from opt.JarvisAI.services.llm_service import generate_response
         
         # Test the function
-        response = get_completion("Test prompt")
-        self.assertEqual(response, "This is a test response")
-        mock_openai.ChatCompletion.create.assert_called_once()
-# ... existing code ...
+        response = generate_response("Test prompt")
+        self.assertEqual(response, "Test response")
+        mock_create.assert_called_once()
+
+if __name__ == '__main__':
+    unittest.main()

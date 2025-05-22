@@ -1,23 +1,31 @@
-# ... existing code ...
+import unittest
+from unittest.mock import patch, MagicMock
+import os
+import sys
+
+# Add the parent directory to sys.path to allow imports from the project root
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 class TestDatabase(unittest.TestCase):
-    def test_database_operations(self):
+    @patch('opt.JarvisAI.services.database.Database')
+    def test_database_operations(self, mock_db):
         """Test database operations"""
-        # Mock a database connection
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_conn.cursor.return_value = mock_cursor
+        # Setup mock
+        mock_instance = MagicMock()
+        mock_db.return_value = mock_instance
+        mock_instance.insert_conversation.return_value = True
+        mock_instance.get_conversation_history.return_value = [{"role": "user", "content": "Hello"}]
         
-        # Mock the fetchall method to return test data
-        mock_cursor.fetchall.return_value = [{'id': 1, 'message': 'test message'}]
+        from opt.JarvisAI.services.database import Database
         
-        # Define a simple function to get chat history
-        def get_chat_history(user_id, conn=mock_conn):
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM chat_history WHERE user_id = %s", (user_id,))
-            return cursor.fetchall()
+        # Test database operations
+        db = Database()
+        result = db.insert_conversation("user", "Hello")
+        self.assertTrue(result)
         
-        # Test the function
-        result = get_chat_history(user_id=1)
-        self.assertEqual(result, [{'id': 1, 'message': 'test message'}])
-        mock_cursor.execute.assert_called_once()
-# ... existing code ...
+        history = db.get_conversation_history()
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["content"], "Hello")
+
+if __name__ == '__main__':
+    unittest.main()
