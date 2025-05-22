@@ -1,20 +1,10 @@
-import os
-import motor.motor_asyncio
-from beanie import init_beanie
-import logging
+# ... existing code ...
 
 from models.db.user import UserDB
 from models.db.settings import SettingsDB
+from models.db.document import DocumentDB
 
-logger = logging.getLogger(__name__)
-
-# MongoDB connection string
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "jarvis_ai")
-
-# MongoDB client
-client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
-db = client[DATABASE_NAME]
+# ... existing code ...
 
 async def init_db():
     """Initialize the database connection"""
@@ -23,7 +13,8 @@ async def init_db():
             database=db,
             document_models=[
                 UserDB,
-                SettingsDB
+                SettingsDB,
+                DocumentDB
             ]
         )
         logger.info("Database connection initialized successfully")
