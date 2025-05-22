@@ -1,26 +1,29 @@
-# ... existing code ...
+import unittest
+from unittest.mock import patch, MagicMock
+import os
+import sys
+import json
+
+# Add the parent directory to sys.path to allow imports from the project root
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 class TestAPIEndpoints(unittest.TestCase):
-    def test_chat_endpoint(self):
+    @patch('opt.JarvisAI.services.llm_service.generate_response')
+    def test_chat_endpoint(self, mock_generate):
         """Test the chat endpoint"""
-        # Create a mock Flask app
-        mock_app = MagicMock()
-        mock_client = MagicMock()
-        mock_app.test_client.return_value = mock_client
+        # Setup mock
+        mock_generate.return_value = "Test response"
         
-        # Mock the response from the test client
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.data = json.dumps({'response': "This is a test response"}).encode('utf-8')
-        mock_client.post.return_value = mock_response
+        from opt.JarvisAI.api.endpoints import chat_endpoint
         
-        # Send a request to the endpoint
-        response = mock_client.post('/api/chat', 
-                              data=json.dumps({'message': 'Hello'}),
-                              content_type='application/json')
+        # Create a mock request
+        mock_request = MagicMock()
+        mock_request.json = {"message": "Hello"}
         
-        # Check the response
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
-        self.assertEqual(data['response'], "This is a test response")
-        mock_client.post.assert_called_once()
-# ... existing code ...
+        # Test the endpoint
+        response = chat_endpoint(mock_request)
+        self.assertEqual(response["response"], "Test response")
+        mock_generate.assert_called_once_with("Hello")
+
+if __name__ == '__main__':
+    unittest.main()
