@@ -1,59 +1,38 @@
-# JarvisAI - Your Personal AI Assistant
+# ... existing code ...
 
-JarvisAI is a modern, full-stack AI assistant application that provides a conversational interface to help with various tasks. Built with Python FastAPI backend and React TypeScript frontend, it offers a seamless experience for interacting with AI.
+### Required Configuration
 
-## Features
+After installation, you'll need to configure the following:
 
-- 🤖 Conversational AI powered by OpenAI's GPT models
-- 🔊 Text-to-speech capabilities for natural interaction
-- 🎛️ Customizable settings for voice, AI model, and appearance
-- 🔌 Extensible integration system for third-party services
-- 🔒 User authentication and personalized experiences
-- 📱 Responsive design that works on desktop and mobile
+1. **OpenAI API Key**: Required for the AI functionality. Get one from [OpenAI's website](https://platform.openai.com/api-keys).
 
-## Architecture
+2. **User Account Setup**: 
+   - After starting the application, navigate to http://localhost:3000
+   - Register a new user account on the registration page
+   - Log in with your credentials
 
-JarvisAI follows a modern microservices architecture:
+3. **Integration API Keys**: To use specific integrations, you'll need to add API keys in the settings page:
+   - Weather: Get an API key from [OpenWeatherMap](https://openweathermap.org/api)
+   - Email: Configure your SMTP server details
+   - Calendar: Set up OAuth credentials for calendar access
+   - Music: Configure music service API keys
 
-- **Backend**: Python FastAPI application providing RESTful API endpoints
-- **Frontend**: React with TypeScript and Material-UI for a responsive interface
-- **Database**: MongoDB for storing user data and settings
-- **Authentication**: JWT-based authentication system
-- **AI Integration**: OpenAI API for natural language processing
+4. **Voice Settings**: Customize the voice used for responses in the settings page.
 
-## Getting Started
+5. **AI Model Settings**: Choose which AI model to use and adjust parameters like temperature.
 
-### Prerequisites
+### First-Time Setup
 
-- Docker and Docker Compose
-- OpenAI API key
+When you first access JarvisAI, follow these steps:
 
-### Installation
+1. Create your user account through the registration page
+2. Log in with your new credentials
+3. Navigate to the Settings page to configure:
+   - AI model preferences
+   - Voice settings
+   - Integration API keys
+4. Return to the Dashboard to start interacting with JarvisAI
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/anubissbe/JarvisAI.git
-   cd JarvisAI
-   ```
+No additional configuration in external systems like OpenWebUI is required. All configuration is done within the JarvisAI application itself.
 
-2. Create a `.env` file in the root directory with the following variables:
-   ```
-   OPENAI_API_KEY=your_openai_api_key
-   JWT_SECRET_KEY=your_jwt_secret_key
-   ```
-
-3. Start the application using Docker Compose:
-   ```bash
-   docker-compose up -d
-   ```
-
-4. Access the application:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - MongoDB Express (database UI): http://localhost:8081
-
-## Development
-
-### Backend Development
-
-The backend is built with FastAPI and follows a modular structure:
+# ... existing code ...
