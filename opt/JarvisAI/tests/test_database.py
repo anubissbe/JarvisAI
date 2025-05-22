@@ -10,7 +10,7 @@ class TestDatabase(unittest.TestCase):
     def setUp(self):
         # Create a mock database module
         self.mock_db = MagicMock()
-        self.mock_db.get_chat_history.return_value = [{'id': 1, 'message': 'test message'}]
+        self.mock_db.get_chat_history = MagicMock(return_value=[{'id': 1, 'message': 'test message'}])
         sys.modules['database'] = self.mock_db
         
     def test_database_operations(self):

@@ -10,7 +10,7 @@ class TestLLMService(unittest.TestCase):
     def setUp(self):
         # Create a mock LLM service module
         self.mock_llm_service = MagicMock()
-        self.mock_llm_service.get_completion.return_value = "This is a test response"
+        self.mock_llm_service.get_completion = MagicMock(return_value="This is a test response")
         sys.modules['llm_service'] = self.mock_llm_service
         
     def test_openai_completion(self):
