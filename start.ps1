@@ -1,25 +1,23 @@
-#!/bin/bash
-
-# JarvisAI startup script for Linux systems
-echo "Starting JarvisAI system..."
+# JarvisAI startup script for Windows systems
+Write-Host "Starting JarvisAI system..." -ForegroundColor Cyan
 
 # Create necessary directories
-mkdir -p ./ollama-models
-mkdir -p ./open-webui-data
-mkdir -p ./jarvis-data
-mkdir -p ./chroma-data
+New-Item -Path ".\ollama-models" -ItemType Directory -Force | Out-Null
+New-Item -Path ".\open-webui-data" -ItemType Directory -Force | Out-Null
+New-Item -Path ".\jarvis-data" -ItemType Directory -Force | Out-Null
+New-Item -Path ".\chroma-data" -ItemType Directory -Force | Out-Null
 
 # Start Docker containers
 docker compose up -d
 
-echo "Waiting for services to start..."
-sleep 10
+Write-Host "Waiting for services to start..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
 
 # Create Jarvis model in Ollama
-echo "Creating Jarvis model in Ollama..."
+Write-Host "Creating Jarvis model in Ollama..." -ForegroundColor Green
 
 # Create modelfile locally
-cat > jarvis.modelfile << EOL
+$modelfileContent = @"
 FROM mixtral:8x7b
 PARAMETER num_ctx 131072
 PARAMETER num_gpu 2
@@ -101,23 +99,25 @@ You are Jarvis, an advanced bilingual AI assistant with expertise in both Englis
 - Adapt gracefully to unexpected inputs or unusual requests.
 - When knowledge retrieval fails, explain the attempt and suggest how the user might reformulate their question.
 """
-EOL
+"@
+
+# Save modelfile locally
+$modelfileContent | Out-File -FilePath ".\jarvis.modelfile" -Encoding UTF8
 
 # Copy the modelfile into the Ollama container
-echo "Copying modelfile to Ollama container..."
-docker cp ./jarvis.modelfile jarvis-ollama:/tmp/jarvis.modelfile
+Write-Host "Copying modelfile to Ollama container..." -ForegroundColor Yellow
+docker cp .\jarvis.modelfile jarvis-ollama:/tmp/jarvis.modelfile
 
 # Create the model in Ollama using the copied file
-echo "Creating Jarvis model..."
+Write-Host "Creating Jarvis model..." -ForegroundColor Green
 docker exec -it jarvis-ollama ollama create jarvis -f /tmp/jarvis.modelfile
 
-echo ""
-echo "JarvisAI system is running!"
-echo "You can access the web interface at: http://localhost:3000"
-echo ""
-echo "Next steps:"
-echo "1. Open http://localhost:3000 in your browser"
-echo "2. In the Open-WebUI interface, select the 'jarvis' model from the model selector"
-echo "3. To add documents to Jarvis's knowledge base, use the RAG section in Open-WebUI"
-echo ""
-echo "To stop the system, run: docker compose down"
+Write-Host "`nJarvisAI system is running!" -ForegroundColor Green
+Write-Host "You can access the web interface at: http://localhost:3000" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Next steps:" -ForegroundColor Yellow
+Write-Host "1. Open http://localhost:3000 in your browser"
+Write-Host "2. In the Open-WebUI interface, select the 'jarvis' model from the model selector"
+Write-Host "3. To add documents to Jarvis's knowledge base, use the RAG section in Open-WebUI"
+Write-Host ""
+Write-Host "To stop the system, run: docker compose down" -ForegroundColor Red

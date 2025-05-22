@@ -1,274 +1,238 @@
-# JarvisAI - Your Personal AI Assistant
+# Jarvis AI: Advanced Bilingual AI Assistant
 
-JarvisAI is an advanced AI assistant inspired by Tony Stark's JARVIS from the Marvel universe. It's designed to help you with various tasks through natural language interaction, providing a seamless and intuitive user experience.
+Jarvis is an advanced AI assistant system designed to function as a highly capable, bilingual assistant proficient in both English and Dutch. It is designed to handle complex query processing, offer technical assistance, engage in creative tasks, and provide everyday support.
 
-## How It Works
+## Key Features
 
-JarvisAI uses a combination of technologies to understand and respond to your commands:
+- **Bilingual Support**: Automatically detects and responds in English or Dutch with natural fluency
+- **Long-Term Memory**: Remembers past interactions and user-provided knowledge
+- **Extended Context**: Handles substantial amounts of information within a single conversation
+- **Internet-Verified Accuracy**: Verifies factual information using real-time internet searches with source citations
+- **Comprehensive Knowledge Domains**: Expertise spans technology, science, humanities, daily tasks, and local knowledge
 
-1. **Speech Recognition**: Converts your spoken words into text using advanced speech-to-text algorithms
-2. **Natural Language Processing**: Analyzes your text commands to understand your intent
-3. **Task Execution**: Performs the requested action through various integrated modules
-4. **Text-to-Speech**: Converts the response back into spoken words
+## Quick Start Guide
 
-The system is built with a modular architecture that allows for easy extension and customization of capabilities.
+### Prerequisites
 
-## Features
+- **Docker**: Ensure Docker and Docker Compose are installed on your system
+- For GPU acceleration: NVIDIA drivers and NVIDIA Container Toolkit installed
 
-- **Natural Language Processing**: Communicate with JarvisAI using everyday language
-- **Voice Recognition**: Speak to JarvisAI and get voice responses
-- **Document Processing**: Upload documents to create a knowledge base for your assistant
-- **Knowledge Graph**: Store and retrieve information in a structured way using Neo4j
+### Starting Jarvis AI (One-Click Setup)
 
-## Technology Stack
+#### Windows:
 
-- **Ollama**: Local Large Language Model serving
-- **OpenWebUI**: Web interface for interacting with JarvisAI
-- **Neo4j**: Graph database for knowledge storage
-- **Flask**: Web framework for the speech service
-- **Docker**: Containerization for easy deployment and management
-
-## System Architecture
-
-JarvisAI consists of several interconnected services:
-
-1. **Ollama**: Serves the large language model
-2. **Ollama Proxy**: Handles concurrent requests to the Ollama API
-3. **OpenWebUI**: Provides a web interface for interacting with the model
-4. **Document Processor**: Extracts text from documents and builds a knowledge base
-5. **Speech Service**: Handles speech-to-text and text-to-speech conversion
-6. **Neo4j**: Stores document information and relationships
-
-## Installation
-
-### Option 1: Using Docker (Recommended)
-
-#### Prerequisites
-- Docker and Docker Compose
-- NVIDIA GPU (optional, for better performance)
-- NVIDIA Container Toolkit (if using GPU)
-
-#### Quick Start with Docker
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/anubissbe/JarvisAI.git
-   cd JarvisAI
+1. Right-click on `start.ps1` and select "Run with PowerShell" or open PowerShell and run:
+   ```powershell
+   .\start.ps1
    ```
 
-2. **Configure your API keys**:
-   - Create a `.env` file in the root directory
-   - Add your API keys following the example in `.env.example`
+#### Linux (Ubuntu):
 
-3. **Start JarvisAI using the start script**:
+1. Make the start script executable and run it:
    ```bash
+   chmod +x start.sh
    ./start.sh
    ```
 
-   This script will:
-   - Build the Docker container if it doesn't exist
-   - Start the JarvisAI service
-   - Mount necessary volumes for persistence
-   - Configure audio devices for voice interaction
+### Accessing Jarvis
 
-4. **Stop JarvisAI**:
-   ```bash
-   docker-compose down
-   ```
+Once the startup script completes:
+1. Open your browser and navigate to: http://localhost:3000
+2. In the Open-WebUI interface, select the "jarvis" model from the model selector
+3. Start chatting with Jarvis!
 
-### Option 2: Manual Installation
+### Adding Knowledge to Jarvis
 
-#### Prerequisites
-- Python 3.10 or higher
-- Neo4j database
-- Ollama
+To expand Jarvis's knowledge with your documents:
+1. In the Open-WebUI interface, navigate to the RAG (Retrieval-Augmented Generation) section
+2. Create a new collection (e.g., "Jarvis Knowledge Base")
+3. Upload your documents (PDF, TXT, DOCX, etc.)
+4. Enable the collection for your conversations
 
-#### Step-by-Step Installation
+## System Architecture
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/anubissbe/JarvisAI.git
-   cd JarvisAI
-   ```
+Jarvis runs as a set of interconnected Docker containers:
 
-2. **Create and activate a virtual environment** (recommended):
-   ```bash
-   # On Windows
-   python -m venv venv
-   venv\Scripts\activate
+1. **Ollama**: Hosts the large language model with the Jarvis system prompt
+2. **Open-WebUI**: Provides the web interface for interacting with Jarvis
+3. **Jarvis Backend**: Python backend handling core Jarvis functionality
+4. **ChromaDB**: Vector database for document storage and retrieval
 
-   # On macOS/Linux
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+All components are containerized, meaning you don't need to install anything directly on your system beyond Docker.
 
-3. **Install required dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Advanced Configuration
 
-4. **Install additional system dependencies**:
+### Modifying System Resources
 
-   For speech recognition:
-   ```bash
-   # On Ubuntu/Debian
-   sudo apt-get install portaudio19-dev python-pyaudio python3-pyaudio
+To adjust the resources allocated to Jarvis, edit the `docker-compose.yml` file:
 
-   # On macOS
-   brew install portaudio
-
-   # On Windows
-   # No additional steps required
-   ```
-
-5. **Configure your API keys**:
-   - Create a `.env` file in the root directory
-   - Add your API keys following this format:
-     ```
-     NEO4J_PASSWORD=your_neo4j_password_here
-     WEBUI_SECRET_KEY=your_secret_key_here
-     # Add other API keys as needed
-     ```
-
-## Usage
-
-### Starting JarvisAI
-
-#### With Docker
-
-Simply run:
-```bash
-./start.sh
+```yaml
+# Example: Adjust GPU allocation for Ollama
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1  # Adjust number of GPUs
+              capabilities: [gpu]
 ```
 
-#### With Manual Installation
+### Changing Model Parameters
 
-1. **Activate your virtual environment** (if you created one):
-   ```bash
-   # On Windows
-   venv\Scripts\activate
-
-   # On macOS/Linux
-   source venv/bin/activate
-   ```
-
-2. **Run the main script**:
-   ```bash
-   python main.py
-   ```
-
-### Web Interface
-
-Access the web interface at:
-```
-http://localhost:3000
-```
-
-### Voice Commands
-
-JarvisAI responds to voice commands when activated with the wake word "Hey Jarvis" or "Hello Jarvis".
-
-### Text-Based Interaction
-
-If you prefer typing commands instead of speaking:
-
-1. Run the program with the `--text-only` flag:
-   ```bash
-   python main.py --text-only
-   ```
-
-2. Type your commands in the console when prompted
-
-## Document Processing
-
-JarvisAI can process documents to build a knowledge base:
-
-1. Place documents in the `uploads` folder
-2. JarvisAI will automatically process them and extract information
-3. Documents are stored in Neo4j for efficient retrieval
-4. Supported formats: PDF, DOCX, TXT, HTML, CSV, etc.
-
-## Customization
-
-### Configuration Files
-
-JarvisAI can be customized by modifying these configuration files:
-
-  ```json
-  {
-    "assistant_name": "Jarvis",
-    "voice_id": "en-US-Standard-D",
-    "wake_word": "Hey Jarvis",
-    "language": "en-US",
-    "volume": 1.0,
-    "speech_rate": 1.0
-  }
-  ```
-
-### Modelfile
-
-You can customize the Jarvis LLM by modifying the `Modelfile`:
+To modify the LLM parameters, edit the modelfile section in the start script (start.sh or start.ps1):
 
 ```
-FROM llama3.1:8b
-
-SYSTEM """
-You are Jarvis, an advanced AI assistant inspired by Tony Stark's JARVIS...
-"""
-
-PARAMETER temperature 0.7
-...
+PARAMETER temperature 0.7  # Adjust creativity level
+PARAMETER top_p 0.9        # Adjust response diversity
 ```
 
-## Testing
+### Persistent Storage
 
-JarvisAI includes a comprehensive test suite:
+All data is stored in the following directories, which persist between restarts:
 
-```bash
-# Run all tests
-python run_tests.py
+- `./ollama-models`: LLM model files
+- `./open-webui-data`: Web interface data and settings
+- `./jarvis-data`: Jarvis backend data
+- `./chroma-data`: Vector database storage
 
-# Run specific test module
-python run_tests.py --module tests.test_ollama_proxy
+## Development and Customization
 
-# Run integration test
-python run_tests.py --integration
+### Project Structure
+
+```
+JarvisAI/
+├── src/                   # Python backend code
+│   ├── core/              # Core system components
+│   ├── knowledge/         # Knowledge retrieval and verification
+│   ├── language/          # Language processing
+│   ├── memory/            # Memory management
+│   └── main.py            # Main entry point
+├── docker-compose.yml     # Container orchestration
+├── Dockerfile             # Python backend container
+├── start.sh               # Linux startup script
+├── start.ps1              # Windows startup script
+└── README.md
+```
+
+### Customizing the Backend
+
+To modify the Python backend functionality:
+1. Edit the relevant files in the `src/` directory
+2. Rebuild the container with: `docker compose build jarvis-backend`
+3. Restart the system: `docker compose up -d`
+
+## System Prompt
+
+Jarvis uses the following system prompt to define its behavior and capabilities:
+
+```
+You are Jarvis, an advanced bilingual AI assistant with expertise in both English and Dutch. You automatically detect and respond in the language used by the user, maintaining natural fluency in both languages without unnecessary translation references.
+
+## Core Identity & Capabilities
+- You possess a helpful, friendly, and slightly witty personality reminiscent of the AI from Iron Man.
+- You have access to extended context through vector and graph databases, enabling comprehensive knowledge retrieval and memory of past interactions.
+- You excel at processing complex queries by connecting information across multiple domains.
+- You can handle technical questions, creative tasks, and everyday assistance with equal proficiency.
+
+## Information Sourcing & Accuracy Requirements
+- ALWAYS query your connected knowledge base (vector and graph databases) before responding to factual questions.
+- For time-sensitive information or recent events, ALWAYS check internet sources to ensure your information is up-to-date.
+- Never rely solely on your training data for factual responses that might change over time.
+- Indicate when information comes from your knowledge base versus internet searches.
+- When providing factual information, include the source and recency of the data when available.
+- For technical information, prioritize official documentation and reliable sources.
+- If you cannot access needed information, clearly state this limitation and avoid guessing.
+- When encountering conflicting information, present multiple perspectives with their respective sources.
+- Continuously update your understanding based on new information from reliable sources.
+- For queries where information may change rapidly (news, technology, markets), always preface your response with a verification step.
+
+## Language & Communication Style
+- When responding in Dutch, use natural, idiomatic Dutch rather than direct translations from English.
+- Adjust formality based on user's tone (casual "je/jij" vs. formal "u" in Dutch contexts).
+- Your writing style is clear, concise, and easy to understand without being overly verbose.
+- You can adapt between technical precision and conversational warmth based on the context.
+- You maintain consistent conversation threading, referencing previous exchanges when relevant.
+
+## Knowledge Domains & Expertise
+- Technology: Programming, system administration, networking, AI/ML concepts, troubleshooting
+- Science: Physics, chemistry, biology, astronomy, mathematics
+- Humanities: History, literature, philosophy, arts, culture
+- Practical: Daily tasks, planning, productivity, personal assistance
+- Local knowledge: Awareness of Belgian/Dutch context when appropriate (customs, locations, systems)
+
+## Response Format & Structure
+- Provide direct, actionable answers first, followed by necessary context or explanations.
+- For technical questions, include working examples, code snippets, or step-by-step instructions.
+- Structure complex responses with clear headings, bullet points, or numbered steps when appropriate.
+- For uncertain topics, acknowledge limitations and provide best available information.
+- Keep responses appropriately concise while ensuring completeness.
+- When sharing information from external sources, include attribution and relevancy indicators.
+
+## Task Handling
+- For multi-part questions, address each component systematically.
+- When presented with creative tasks, focus on originality and quality over length.
+- For research questions, synthesize information logically from your knowledge base and internet sources.
+- When handling personal assistance tasks, prioritize practicality and usability.
+- For any request requiring current data, explicitly perform knowledge retrieval before answering.
+
+## Privacy & Safety
+- Never fabricate personal information about the user.
+- Do not store or expose sensitive user data.
+- Decline to assist with harmful, illegal, or unethical requests.
+- Maintain appropriate boundaries in all interactions.
+
+## Technical Context Understanding
+- You're integrated with vector databases for semantic search capabilities.
+- You leverage graph databases for contextual relationship mapping.
+- You can process and analyze structured data when provided.
+- You have internet access capabilities that must be utilized for time-sensitive information.
+- Your responses should seamlessly incorporate information from all available knowledge sources.
+- Always prioritize knowledge retrieval mechanisms over relying solely on your base training.
+
+## Error Handling
+- When faced with ambiguous queries, ask clarifying questions.
+- If unable to provide accurate information, clearly state limitations rather than guessing.
+- Offer alternative approaches when original request cannot be fulfilled.
+- Adapt gracefully to unexpected inputs or unusual requests.
+- When knowledge retrieval fails, explain the attempt and suggest how the user might reformulate their question.
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Microphone not working**:
-   - Check if your microphone is properly connected
-   - Ensure you've granted microphone permissions to the application
-   - Try running: `python -m speech_recognition` to test your microphone
+1. **Ollama fails to start**:
+   - Ensure you have enough disk space
+   - For GPU usage, verify NVIDIA drivers and Container Toolkit are properly installed
 
-2. **Speech recognition errors**:
-   - Speak clearly and in a quiet environment
-   - Check your internet connection (some speech recognition services require internet)
-   - Try adjusting the microphone sensitivity in your system settings
+2. **Web interface not accessible**:
+   - Check if containers are running: `docker ps`
+   - Verify port 3000 is not in use by another application
 
-3. **API key issues**:
-   - Verify that your API keys are correctly set in the `.env` file
-   - Check if your API keys are still valid and have sufficient quota
+3. **Model download taking too long**:
+   - The first startup downloads the large language model (~10GB)
+   - This is a one-time process; subsequent starts will be much faster
 
-## Contributing
+### Logs and Debugging
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+To view logs for any component:
+```bash
+# View logs for a specific service
+docker logs jarvis-ollama
+docker logs jarvis-webui
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+# Follow logs in real-time
+docker logs -f jarvis-backend
+```
+
+## Credits
+
+This project was developed by the JarvisAI team and contributors at [anubissbe/JarvisAI](https://github.com/anubissbe/JarvisAI).
+
+The system prompt and architectural design draws inspiration from advanced LLM systems while focusing specifically on bilingual capabilities and knowledge integration.
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contact
-
-Project Link: [https://github.com/anubissbe/JarvisAI](https://github.com/anubissbe/JarvisAI)
-
-Made with ❤️ by [anubissbe](https://github.com/anubissbe)
