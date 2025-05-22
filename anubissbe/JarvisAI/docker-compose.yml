@@ -14,37 +14,8 @@ services:
       - mongo
     volumes:
       - ./backend:/app
+      - ./faiss_index:/app/faiss_index
       - /app/__pycache__
     restart: unless-stopped
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
-    restart: unless-stopped
-
-  mongo:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    restart: unless-stopped
-
-  mongo-express:
-    image: mongo-express
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    environment:
-      - ME_CONFIG_MONGODB_SERVER=mongo
-      - ME_CONFIG_MONGODB_PORT=27017
-    depends_on:
-      - mongo
-
-volumes:
-  mongo_data:
+# ... existing code ...
