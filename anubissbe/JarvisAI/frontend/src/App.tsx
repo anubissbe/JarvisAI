@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
-import { useSelector } from 'react-redux';
-import { RootState } from './store';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from './store';
+import { fetchUserProfile } from './store/slices/authSlice';
 
 // Pages
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -15,12 +17,21 @@ import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const App: React.FC = () => {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, token } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Try to fetch user profile if token exists
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchUserProfile());
+    }
+  }, [dispatch, token]);
 
   return (
     <Router>
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Routes>
+          <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
           <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register />} />
           
@@ -36,7 +47,7 @@ const App: React.FC = () => {
             </ProtectedRoute>
           } />
           
-          <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+          <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/landing" />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Box>
