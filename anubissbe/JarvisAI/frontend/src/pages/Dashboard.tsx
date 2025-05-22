@@ -6,7 +6,8 @@ import {
   startAssistantTyping, 
   sendMessage, 
   executeCommand,
-  removeCommand
+  removeCommand,
+  clearChat
 } from '../store/slices/chatSlice';
 import { fetchSettings } from '../store/slices/settingsSlice';
 import {
@@ -17,10 +18,14 @@ import {
   Grid,
   useTheme,
   Fade,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
+import { Delete, VolumeUp, VolumeOff } from '@mui/icons-material';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import CommandCard from '../components/CommandCard';
+import WelcomeScreen from '../components/WelcomeScreen';
 import speechService from '../services/speechService';
 
 const Dashboard: React.FC = () => {
@@ -28,6 +33,8 @@ const Dashboard: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   
   const { messages, loading, activeCommands } = useSelector((state: RootState) => state.chat);
   const { settings } = useSelector((state: RootState) => state.settings);
@@ -37,6 +44,13 @@ const Dashboard: React.FC = () => {
     dispatch(fetchSettings());
   }, [dispatch]);
   
+  // Update voice enabled state when settings change
+  useEffect(() => {
+    if (settings?.voice) {
+      setVoiceEnabled(settings.voice.enabled);
+    }
+  }, [settings]);
+  
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,7 +58,7 @@ const Dashboard: React.FC = () => {
   
   // Text-to-speech for assistant messages
   useEffect(() => {
-    if (settings?.voice?.enabled && messages.length > 0) {
+    if (voiceEnabled && settings?.voice?.enabled && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === 'assistant' && !lastMessage.isTyping && !isSpeaking) {
         setIsSpeaking(true);
@@ -64,9 +78,14 @@ const Dashboard: React.FC = () => {
     return () => {
       speechService.stop();
     };
-  }, [messages, settings, isSpeaking]);
+  }, [messages, settings, isSpeaking, voiceEnabled]);
   
   const handleSendMessage = async (message: string) => {
+    // Hide welcome screen if visible
+    if (showWelcome) {
+      setShowWelcome(false);
+    }
+    
     // Add user message to chat
     dispatch(addUserMessage(message));
     
@@ -84,6 +103,27 @@ const Dashboard: React.FC = () => {
   const handleDismissCommand = (commandId: string) => {
     dispatch(removeCommand(commandId));
   };
+  
+  const handleClearChat = () => {
+    speechService.stop();
+    dispatch(clearChat());
+  };
+  
+  const toggleVoice = () => {
+    setVoiceEnabled(!voiceEnabled);
+    if (isSpeaking) {
+      speechService.stop();
+      setIsSpeaking(false);
+    }
+  };
+  
+  const handleStartChat = () => {
+    setShowWelcome(false);
+  };
+  
+  if (showWelcome && messages.length === 0) {
+    return <WelcomeScreen onStartChat={handleStartChat} />;
+  }
   
   return (
     <Box sx={{ height: 'calc(100vh - 100px)' }}>
@@ -106,9 +146,24 @@ const Dashboard: React.FC = () => {
                 borderBottom: 1,
                 borderColor: 'divider',
                 bgcolor: 'background.paper',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
               }}
             >
               <Typography variant="h6">Chat with Jarvis</Typography>
+              <Box>
+                <Tooltip title={voiceEnabled ? "Mute voice" : "Enable voice"}>
+                  <IconButton onClick={toggleVoice} size="small" sx={{ mr: 1 }}>
+                    {voiceEnabled ? <VolumeUp /> : <VolumeOff />}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Clear chat">
+                  <IconButton onClick={handleClearChat} size="small">
+                    <Delete />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
             
             <Box
