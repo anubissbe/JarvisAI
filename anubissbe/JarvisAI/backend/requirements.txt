@@ -1,13 +1,6 @@
-fastapi==0.95.1
-uvicorn==0.22.0
-pydantic==1.10.7
-python-jose==3.3.0
-passlib==1.7.4
+# ... existing code ...
+PyPDF2==3.0.1
+python-docx==0.8.11
+langchain==0.0.267
+faiss-cpu==1.7.4
 python-multipart==0.0.6
-motor==3.1.2
-beanie==1.19.0
-openai==0.27.6
-aiohttp==3.8.4
-beautifulsoup4==4.12.2
-psutil==5.9.5
-python-dotenv==1.0.0
