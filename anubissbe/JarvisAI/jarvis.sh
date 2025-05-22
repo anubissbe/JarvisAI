@@ -40,7 +40,17 @@ start_app() {
     if [ $backend_ready -eq 0 ]; then
         log "Backend service did not become ready in time." "ERROR"
         return 1
-    fi
+    }
+    
+    # Pull required Ollama models
+    log "Pulling required Ollama models..." "INFO"
+    docker exec -it $(docker-compose ps -q ollama) ollama pull llama3 2>> "$ERROR_LOG" || {
+        log "Warning: Failed to pull llama3 model. You may need to pull it manually." "WARN"
+    }
+    
+    docker exec -it $(docker-compose ps -q ollama) ollama pull nomic-embed-text-v1.5 2>> "$ERROR_LOG" || {
+        log "Warning: Failed to pull nomic-embed-text-v1.5 model. You may need to pull it manually." "WARN"
+    }
     
     log "JarvisAI is now running!" "INFO"
     log "Access the application at:" "INFO"
@@ -55,9 +65,9 @@ start_app() {
     log "  2. Register a new user account" "INFO"
     log "  3. Log in with your new credentials" "INFO"
     log "  4. Go to Settings to configure AI model, voice, and integrations" "INFO"
-    log "  5. Return to Dashboard to start interacting with JarvisAI" "INFO"
+    log "  5. Go to Knowledge Base to upload documents" "INFO"
+    log "  6. Return to Dashboard to start interacting with JarvisAI" "INFO"
     log "" "INFO"
-    log "No additional external configuration is required." "INFO"
     
     return 0
 }
