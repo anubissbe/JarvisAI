@@ -6,6 +6,7 @@ This module implements the core functionality of the Jarvis system.
 import logging
 import importlib
 import sys
+import time
 from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 
@@ -38,30 +39,73 @@ class JarvisEngine:
         self.logger = logging.getLogger("jarvis.engine")
         self.config = config or {}
         
+        # Add metrics tracking
+        self.start_time = time.time()
+        self.request_count = 0
+        self.error_count = 0
+        self.last_error = None
+        
+        # Component status tracking
+        self._components = {
+            "language": False,
+            "memory": False,
+            "knowledge": False,
+            "llm": False
+        }
+        
         self.logger.info("Initializing Jarvis AI Assistant...")
         
-        # Set up configuration values
-        memory_dir = self.config.get("memory_dir")
-        knowledge_dir = self.config.get("knowledge_dir")
-        ollama_url = self.config.get("ollama_url", "http://localhost:11434")
-        max_context_size = self.config.get("max_context_size", 10)
-        
-        # Initialize core components
-        self.language = LanguageProcessor()
-        self.memory = MemoryManager(memory_dir=memory_dir, max_context_size=max_context_size)
-        self.knowledge = KnowledgeBase(knowledge_dir=knowledge_dir, config=self.config)
-        
-        # Initialize LLM client
         try:
-            self.logger.info(f"Connecting to Ollama LLM at {ollama_url}")
-            self.llm = OllamaClient(base_url=ollama_url, model="jarvis")
-            self.logger.info("Successfully connected to Ollama LLM")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize Ollama client: {e}")
-            self.logger.warning("LLM functionality will be limited")
+            # Set up configuration values with validation
+            memory_dir = self._validate_dir_path(self.config.get("memory_dir"))
+            knowledge_dir = self._validate_dir_path(self.config.get("knowledge_dir"))
+            ollama_url = self._validate_url(self.config.get("ollama_url", "http://localhost:11434"))
+            max_context_size = min(max(1, self.config.get("max_context_size", 10)), 100)
+            
+            # Initialize core components with cleanup on failure
+            try:
+                self.language = LanguageProcessor()
+                self._components["language"] = True
+                
+                self.memory = MemoryManager(memory_dir=memory_dir, max_context_size=max_context_size)
+                self._components["memory"] = True
+                
+                self.knowledge = KnowledgeBase(knowledge_dir=knowledge_dir, config=self.config)
+                self._components["knowledge"] = True
+                
+            except Exception as e:
+                self.logger.error(f"Failed to initialize core components: {e}")
+                self._cleanup_failed_init()
+                raise
+            
+            # Initialize LLM client with timeout and retry
             self.llm = None
-        
-        self.logger.info("Jarvis initialization complete.")
+            for attempt in range(3):  # Try 3 times
+                try:
+                    self.logger.info(f"Connecting to Ollama LLM at {ollama_url} (attempt {attempt + 1})")
+                    self.llm = OllamaClient(
+                        base_url=ollama_url,
+                        model="jarvis",
+                        timeout=10.0  # 10 second timeout
+                    )
+                    # Test the connection
+                    self.llm.get_available_models()
+                    self._components["llm"] = True
+                    self.logger.info("Successfully connected to Ollama LLM")
+                    break
+                    
+                except Exception as e:
+                    self.logger.warning(f"LLM connection attempt {attempt + 1} failed: {e}")
+                    if attempt == 2:  # Last attempt
+                        self.logger.error("Failed to initialize Ollama client after 3 attempts")
+                        self.logger.warning("LLM functionality will be limited")
+            
+            self.logger.info("Jarvis initialization complete.")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Jarvis: {e}")
+            self._cleanup_failed_init()
+            raise
         
         # Persona configuration
         self.persona = {
@@ -93,60 +137,149 @@ class JarvisEngine:
         Returns:
             A string response from Jarvis.
         """
-        # Detect language
-        language = self.language.detect_language(user_input)
-        self.logger.debug(f"Detected language: {language}")
+        # Increment request counter
+        self.request_count += 1
+        request_id = f"req_{int(time.time())}_{self.request_count}"
         
-        # Process the input in the context of conversation history
-        context = self.memory.get_conversation_context()
+        # Record start time for performance tracking
+        start_time = time.time()
+        language = "en"  # Default language in case of early error
         
-        # Extract intent and entities
-        intent, entities = self.language.extract_intent_and_entities(user_input, language)
-        self.logger.debug(f"Intent: {intent}, Entities: {entities}")
-        
-        # Check if this is a command to search the web
-        if self._is_web_search_command(user_input, intent, entities, language):
-            force_web_search = True
-            # Extract the actual query from the web search command
-            user_input = self._extract_query_from_web_search_command(user_input, language)
-            self.logger.info(f"Web search command detected. Query: {user_input}")
-        
-        # Handle simple intents directly
-        if intent == "greeting":
-            response = self.persona[language]["greeting"]
-        elif intent == "farewell":
-            response = self.persona[language]["farewell"]
-        else:
-            # For more complex queries, first check the knowledge base
-            knowledge_info = self.knowledge.query(intent, entities, language, force_web_search)
+        try:
+            # Input validation
+            if not user_input or not user_input.strip():
+                raise ValueError("Empty input")
             
-            # If LLM is available, use it for response generation
-            if self.llm:
-                # Prepare system message with any retrieved knowledge
-                system_message = self._prepare_system_message(intent, entities, knowledge_info, language)
-                
-                # Format chat history for context
-                chat_history = []
-                if context:
-                    chat_history = self.llm.format_chat_history(context[-5:])  # Use last 5 interactions
-                
-                # Add the current user message
-                chat_history.append({"role": "user", "content": user_input})
-                
-                # Get response from LLM
-                llm_response, metadata = self.llm.chat(chat_history, system_message)
-                self.logger.debug(f"LLM response metadata: {metadata}")
-                
-                # Use the LLM response
-                response = llm_response
+            user_input = user_input.strip()
+            if len(user_input) > 1000:  # Reasonable limit for input length
+                raise ValueError("Input too long (max 1000 characters)")
+            
+            # Detect language
+            language = self.language.detect_language(user_input)
+            self.logger.debug(f"[{request_id}] Detected language: {language}")
+            
+            # Get conversation context with automatic pruning of old entries
+            context = self.memory.get_conversation_context()
+            if len(context) > self.memory.max_context_size:
+                self.logger.debug(f"[{request_id}] Pruning conversation context")
+                context = context[-self.memory.max_context_size:]
+            
+            # Extract intent and entities
+            intent, entities = self.language.extract_intent_and_entities(user_input, language)
+            self.logger.debug(f"[{request_id}] Intent: {intent}, Entities: {entities}")
+            
+            # Check if this is a command to search the web
+            if self._is_web_search_command(user_input, intent, entities, language):
+                force_web_search = True
+                user_input = self._extract_query_from_web_search_command(user_input, language)
+                self.logger.info(f"[{request_id}] Web search command detected. Query: {user_input}")
+            
+            # Handle simple intents directly
+            if intent == "greeting":
+                response = self.persona[language]["greeting"]
+            elif intent == "farewell":
+                response = self.persona[language]["farewell"]
             else:
-                # Fallback to template-based response if LLM is unavailable
-                response = self.language.generate_response(intent, entities, knowledge_info, context, language)
+                # For more complex queries, first check the knowledge base
+                try:
+                    knowledge_info = self.knowledge.query(
+                        intent, entities, language, force_web_search,
+                        timeout=5.0  # 5 second timeout for knowledge queries
+                    )
+                except TimeoutError:
+                    self.logger.warning(f"[{request_id}] Knowledge base query timed out")
+                    knowledge_info = None
+                
+                # Try LLM first, fall back to templates if needed
+                response = None
+                llm_error = None
+                
+                if self.llm:
+                    try:
+                        # Prepare system message
+                        system_message = self._prepare_system_message(
+                            intent, entities, knowledge_info, language
+                        )
+                        
+                        # Format chat history
+                        chat_history = []
+                        if context:
+                            chat_history = self.llm.format_chat_history(
+                                context[-min(5, len(context)):]  # Use last 5 interactions max
+                            )
+                        
+                        # Add current message
+                        chat_history.append({"role": "user", "content": user_input})
+                        
+                        # Get LLM response with timeout
+                        llm_response, metadata = await asyncio.wait_for(
+                            self.llm.chat(chat_history, system_message),
+                            timeout=10.0  # 10 second timeout
+                        )
+                        
+                        self.logger.debug(f"[{request_id}] LLM response metadata: {metadata}")
+                        response = llm_response
+                        
+                    except Exception as e:
+                        llm_error = str(e)
+                        self.logger.error(f"[{request_id}] LLM error: {e}")
+                
+                # Fall back to template response if LLM failed or is unavailable
+                if not response:
+                    self.logger.info(f"[{request_id}] Using template fallback response")
+                    response = self.language.generate_response(
+                        intent, entities, knowledge_info, context, language
+                    )
+                    if llm_error:
+                        # Add a note about the fallback if in debug mode
+                        if self.config.get("debug", False):
+                            response += f"\n\n[Debug: Using template fallback due to LLM error: {llm_error}]"
+            
+            # Update memory with bounded size
+            try:
+                self.memory.add_interaction(
+                    user_input, response, intent, entities, knowledge_info,
+                    metadata={"request_id": request_id}
+                )
+            except Exception as e:
+                self.logger.error(f"[{request_id}] Failed to update memory: {e}")
+            
+            # Log performance metrics
+            process_time = time.time() - start_time
+            self.logger.info(
+                f"[{request_id}] Processed input in {process_time:.2f}s "
+                f"(language: {language}, intent: {intent})"
+            )
+            
+            return response
+            
+        except ValueError as e:
+            # Handle validation errors
+            self.error_count += 1
+            self.last_error = str(e)
+            self.logger.warning(f"[{request_id}] Validation error: {e}")
+            
+            return (
+                "Sorry, uw invoer is niet geldig. Probeer het opnieuw." if language == "nl"
+                else "Sorry, your input is not valid. Please try again."
+            )
+            
+        except Exception as e:
+            # Handle other errors
+            self.error_count += 1
+            self.last_error = str(e)
+            self.logger.error(f"[{request_id}] Error processing input: {e}", exc_info=True)
+            
+            # Return a friendly error message
+            return (
+                "Sorry, er is een fout opgetreden bij het verwerken van uw verzoek. "
+                "Probeer het later nog eens." if language == "nl"
+                else "Sorry, an error occurred while processing your request. Please try again later."
+            )
         
-        # Update memory with this interaction, including knowledge info
-        self.memory.add_interaction(user_input, response, intent, entities, knowledge_info)
-        
-        return response
+        finally:
+            # Clean up any resources if needed
+            self._cleanup_request_resources(request_id)
     
     def _is_web_search_command(self, text: str, intent: str, entities: Dict[str, Any], language: str) -> bool:
         """Check if the input is a command to search the web.
@@ -184,7 +317,44 @@ class JarvisEngine:
                 if text_lower.startswith(prefix):
                     return True
         
-        return False
+    def _validate_dir_path(self, path: Optional[str]) -> Optional[str]:
+        """Validate and create directory path if needed."""
+        if not path:
+            return None
+            
+        try:
+            path = os.path.expanduser(path)
+            os.makedirs(path, exist_ok=True)
+            return path
+        except Exception as e:
+            self.logger.error(f"Invalid directory path {path}: {e}")
+            raise ValueError(f"Invalid directory path: {e}")
+    
+    def _validate_url(self, url: str) -> str:
+        """Validate URL format."""
+        if not url.startswith(("http://", "https://")):
+            raise ValueError("URL must start with http:// or https://")
+        return url
+    
+    def _cleanup_failed_init(self) -> None:
+        """Clean up resources after failed initialization."""
+        for component, initialized in self._components.items():
+            if initialized:
+                try:
+                    if hasattr(self, component):
+                        obj = getattr(self, component)
+                        if hasattr(obj, "cleanup"):
+                            obj.cleanup()
+                except Exception as e:
+                    self.logger.error(f"Error cleaning up {component}: {e}")
+    
+    def _cleanup_request_resources(self, request_id: str) -> None:
+        """Clean up any resources allocated for a specific request."""
+        try:
+            # Add any request-specific cleanup here
+            pass
+        except Exception as e:
+            self.logger.error(f"Error in request cleanup for {request_id}: {e}")
     
     def _extract_query_from_web_search_command(self, text: str, language: str) -> str:
         """Extract the actual query from a web search command.

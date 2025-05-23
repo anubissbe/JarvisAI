@@ -43,18 +43,34 @@ class OllamaClient:
         Returns:
             True if the connection is successful, False otherwise.
         """
-        try:
-            # Try to ping the Ollama API
-            response = requests.get(f"{self.api_url}/health", timeout=5)
-            if response.status_code == 200:
-                self.logger.info(f"Successfully connected to Ollama API at {self.base_url}")
-                return True
+        max_retries = 3
+        retry_delay = 2  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                # Try to ping the Ollama API
+                response = requests.get(f"{self.api_url}/health", timeout=5)
+                if response.status_code == 200:
+                    self.logger.info(f"Successfully connected to Ollama API at {self.base_url}")
+                    return True
+                
+                self.logger.warning(f"Ollama API responded with status code {response.status_code} (Attempt {attempt+1}/{max_retries})")
+                
+            except requests.exceptions.ConnectionError:
+                self.logger.warning(f"Connection refused to Ollama API at {self.base_url} (Attempt {attempt+1}/{max_retries})")
+            except requests.exceptions.Timeout:
+                self.logger.warning(f"Connection timeout to Ollama API at {self.base_url} (Attempt {attempt+1}/{max_retries})")
+            except Exception as e:
+                self.logger.error(f"Failed to connect to Ollama API: {e} (Attempt {attempt+1}/{max_retries})")
             
-            self.logger.warning(f"Ollama API responded with status code {response.status_code}")
-            return False
-        except Exception as e:
-            self.logger.error(f"Failed to connect to Ollama API: {e}")
-            return False
+            # Retry with exponential backoff if this is not the last attempt
+            if attempt < max_retries - 1:
+                retry_seconds = retry_delay * (2 ** attempt)  # Exponential backoff
+                self.logger.info(f"Retrying connection in {retry_seconds} seconds...")
+                time.sleep(retry_seconds)
+            
+        self.logger.error(f"Failed to connect to Ollama API after {max_retries} attempts")
+        return False
     
     def generate(self, prompt: str, system_prompt: Optional[str] = None,
                 max_tokens: int = 2048, temperature: float = 0.7) -> Tuple[str, Dict[str, Any]]:
@@ -108,9 +124,22 @@ class OllamaClient:
                     
                     return generated_text, metadata
                 else:
-                    self.logger.warning(f"Ollama API responded with status code {response.status_code}: {response.text}")
+                    self.logger.warning(
+                        f"Ollama API responded with status code {response.status_code}: {response.text} "
+                        f"(Attempt {attempt+1}/{max_retries}, prompt: '{prompt[:50]}...')"
+                    )
+            except requests.exceptions.ConnectionError as e:
+                self.logger.error(
+                    f"Connection error during generate request (Attempt {attempt+1}/{max_retries}): {e}"
+                )
+            except requests.exceptions.Timeout as e:
+                self.logger.error(
+                    f"Timeout during generate request (Attempt {attempt+1}/{max_retries}): {e}"
+                )
             except Exception as e:
-                self.logger.error(f"Error during generate request (Attempt {attempt+1}): {e}")
+                self.logger.error(
+                    f"Unexpected error during generate request (Attempt {attempt+1}/{max_retries}): {e}"
+                )
             
             # Retry with exponential backoff
             if attempt < max_retries - 1:

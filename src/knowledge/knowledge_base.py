@@ -10,6 +10,7 @@ import time
 import requests
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
+import time
 
 # Import ChromaDB
 import chromadb
@@ -104,16 +105,28 @@ class KnowledgeBase:
                     self.collection = self._get_or_create_collection("jarvis_knowledge")
                     self.logger.info("Successfully connected to ChromaDB vector database")
                     break
-                except Exception as e:
-                    self.logger.warning(f"Attempt {attempt+1} to connect to ChromaDB failed: {e}")
+                except requests.exceptions.ConnectionError as e:
+                    self.logger.warning(f"Connection error to ChromaDB (Attempt {attempt+1}): {e}")
                     if attempt < max_retries - 1:
-                        import time
                         self.logger.info(f"Retrying in {retry_delay} seconds...")
                         time.sleep(retry_delay)
                         retry_delay *= 1.5  # Exponential backoff
                     else:
-                        self.logger.error(f"Failed to connect to ChromaDB after {max_retries} attempts")
+                        self.logger.error(f"Failed to connect to ChromaDB after {max_retries} attempts: Connection refused")
                         self.logger.warning("Falling back to local knowledge only")
+                except chromadb.errors.ChromaError as e:
+                    self.logger.warning(f"ChromaDB error (Attempt {attempt+1}): {e}")
+                    if attempt < max_retries - 1:
+                        self.logger.info(f"Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        retry_delay *= 1.5  # Exponential backoff
+                    else:
+                        self.logger.error(f"Failed to connect to ChromaDB after {max_retries} attempts: ChromaDB error")
+                        self.logger.warning("Falling back to local knowledge only")
+                except Exception as e:
+                    self.logger.error(f"Unexpected error connecting to ChromaDB: {e}")
+                    self.logger.warning("Falling back to local knowledge only")
+                    break
         except Exception as e:
             self.logger.error(f"Error parsing ChromaDB URL or setting up connection: {e}")
             self.logger.warning("Falling back to local knowledge only")
@@ -436,7 +449,31 @@ class KnowledgeBase:
         Returns:
             True if successful, False otherwise.
         """
+        # Validate inputs
+        if not text or not isinstance(text, str):
+            self.logger.error("Invalid document text: must be a non-empty string")
+            return False
+            
+        if not isinstance(metadata, dict):
+            self.logger.error("Invalid metadata: must be a dictionary")
+            return False
+            
+        # Check for required metadata fields
+        required_fields = ["language"]
+        for field in required_fields:
+            if field not in metadata:
+                self.logger.warning(f"Missing required metadata field: {field}")
+                metadata[field] = "en"  # Set default value
+        
+        # Ensure text isn't too long or too short
+        if len(text) < 10:
+            self.logger.warning("Text is very short, might not provide good embeddings")
+        elif len(text) > 100000:
+            self.logger.warning("Text is very long, truncating to 100,000 characters")
+            text = text[:100000]
+            
         if not self.collection:
+            self.logger.error("Vector database collection is not initialized")
             return False
             
         try:
@@ -451,6 +488,7 @@ class KnowledgeBase:
                 ids=[doc_id]
             )
             
+            self.logger.info(f"Successfully added document to vector database (ID: {doc_id})")
             return True
         except Exception as e:
             self.logger.error(f"Error adding to vector database: {e}")

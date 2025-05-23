@@ -2,6 +2,8 @@
 requests>=2.28.1
 numpy>=1.23.3
 python-dotenv>=0.21.0
+urllib3>=1.26.12
+aiohttp>=3.8.3
 
 # NLP and language processing
 langdetect>=1.0.9
@@ -13,6 +15,7 @@ sentence-transformers>=2.2.2
 beautifulsoup4>=4.11.1
 fastapi>=0.85.0
 uvicorn>=0.18.3
+slowapi>=0.1.6  # For rate limiting
 
 # Database and storage
 sqlalchemy>=1.4.41
@@ -22,3 +25,5 @@ chromadb>=0.3.21
 pydantic>=1.10.2
 tqdm>=4.64.1
 colorama>=0.4.5
+httpx>=0.23.0
+tenacity>=8.0.1  # For retrying operations
