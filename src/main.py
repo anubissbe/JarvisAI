@@ -214,8 +214,13 @@ async def metrics(api_key: dict = Depends(get_admin_api_key)):
                     "status": "unhealthy",
                     "error": str(e)
                 }
-    
-    return metrics
+        
+        return metrics
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error collecting metrics: {str(e)}"
+        )
 
 
 # Create a standard error response model
