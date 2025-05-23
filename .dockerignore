@@ -1,0 +1,33 @@
+# Ignore large local data and cache directories
+/open-webui-data
+/open-webui-data/**
+/chroma-data
+/chroma-data/**
+/jarvis-data
+/jarvis-data/**
+/ollama-models
+/ollama-models/**
+
+# Python bytecode files
+**/__pycache__
+**/*.py[cod]
+
+# Virtual environments
+.venv
+venv
+
+# Git metadata
+.git
+
+# Project files not needed in Docker image
+Dockerfile
+docker-compose.yml
+start.sh
+start.ps1
+jarvis.modelfile
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea
+.vscode

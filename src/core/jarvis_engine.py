@@ -7,21 +7,15 @@ import logging
 import importlib
 import sys
 import time
+import asyncio
+import os
 from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 
-# Use absolute imports for better reliability
-try:
-    from src.language.processor import LanguageProcessor
-    from src.memory.memory_manager import MemoryManager
-    from src.knowledge.knowledge_base import KnowledgeBase
-    from src.llm.ollama_client import OllamaClient
-except ImportError:
-    # Fallback to relative imports if the module is not in the path
-    from ..language.processor import LanguageProcessor
-    from ..memory.memory_manager import MemoryManager
-    from ..knowledge.knowledge_base import KnowledgeBase
-    from ..llm.ollama_client import OllamaClient
+from language.processor import LanguageProcessor
+from memory.memory_manager import MemoryManager
+from knowledge.knowledge_base import KnowledgeBase
+from llm.ollama_client import OllamaClient
 
 class JarvisEngine:
     """Core engine for Jarvis AI Assistant.
@@ -85,14 +79,15 @@ class JarvisEngine:
                     self.logger.info(f"Connecting to Ollama LLM at {ollama_url} (attempt {attempt + 1})")
                     self.llm = OllamaClient(
                         base_url=ollama_url,
-                        model="jarvis",
-                        timeout=10.0  # 10 second timeout
+                        model="jarvis"
                     )
                     # Test the connection
-                    self.llm.get_available_models()
-                    self._components["llm"] = True
-                    self.logger.info("Successfully connected to Ollama LLM")
-                    break
+                    if self.llm._test_connection():
+                        models = self.llm.get_available_models()
+                        if models:
+                            self._components["llm"] = True
+                            self.logger.info("Successfully connected to Ollama LLM")
+                            break
                     
                 except Exception as e:
                     self.logger.warning(f"LLM connection attempt {attempt + 1} failed: {e}")
@@ -127,7 +122,7 @@ class JarvisEngine:
             }
         }
     
-    def process_input(self, user_input: str, force_web_search: bool = False) -> str:
+    async def process_input(self, user_input: str, force_web_search: bool = False) -> str:
         """Process user input and generate a response.
         
         Args:

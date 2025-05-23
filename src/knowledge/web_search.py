@@ -15,10 +15,10 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote_plus, urlparse
 
 # Import web utilities
-from ..utilities.web_utils import (
-    is_valid_url, 
-    extract_main_content, 
-    get_webpage_title, 
+from utilities.web_utils import (
+    is_valid_url,
+    extract_main_content,
+    get_webpage_title,
     extract_metadata,
     sanitize_url,
     get_domain_from_url

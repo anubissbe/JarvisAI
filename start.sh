@@ -9,11 +9,24 @@ mkdir -p ./open-webui-data
 mkdir -p ./jarvis-data
 mkdir -p ./chroma-data
 
-# Start Docker containers
-docker compose up -d
+# Start core services: Ollama, ChromaDB, and backend
+docker compose up -d ollama chroma-db jarvis-backend
 
-echo "Waiting for services to start..."
-sleep 10
+# Wait for Ollama API to be available
+echo "Waiting for Ollama API (http://localhost:11434/api/tags)..."
+until curl -s http://localhost:11434/api/tags >/dev/null 2>&1; do
+  echo "Waiting for Ollama..."
+  sleep 5
+done
+
+# Wait for backend to be healthy
+echo "Waiting for backend API (http://localhost:8000/health)..."
+until curl -s http://localhost:8000/health >/dev/null 2>&1; do
+  echo "Waiting for backend..."
+  sleep 5
+done
+
+# (Open-WebUI will be started after the Ollama model is created)
 
 # Create Jarvis model in Ollama
 echo "Creating Jarvis model in Ollama..."
@@ -109,7 +122,26 @@ docker cp ./jarvis.modelfile jarvis-ollama:/tmp/jarvis.modelfile
 
 # Create the model in Ollama using the copied file
 echo "Creating Jarvis model..."
-docker exec -it jarvis-ollama ollama create jarvis -f /tmp/jarvis.modelfile
+docker exec jarvis-ollama ollama create jarvis -f /tmp/jarvis.modelfile
+
+# Wait for the Jarvis model to be registered in Ollama
+
+echo "Waiting for Ollama to register 'jarvis' model..."
+until docker exec jarvis-ollama ollama list | grep -q '^jarvis$'; do
+  echo "  → model not yet available, retrying..."
+  sleep 3
+done
+
+echo "Jarvis model is now available in Ollama."
++echo "Starting Open-WebUI..."
++docker compose up -d open-webui
++echo "Waiting for Open-WebUI (http://localhost:${WEBUI_PORT:-3000})..."
++until curl -s http://localhost:${WEBUI_PORT:-3000}/ >/dev/null 2>&1; do
++  echo "  → Open-WebUI still starting..."
++  sleep 5
++done
+
+# (Open-WebUI will be started after model registration)
 
 echo ""
 echo "JarvisAI system is running!"

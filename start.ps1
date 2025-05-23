@@ -1,22 +1,68 @@
 # JarvisAI startup script for Windows systems
+param()
+
 Write-Host "Starting JarvisAI system..." -ForegroundColor Cyan
 
 # Create necessary directories
-New-Item -Path ".\ollama-models" -ItemType Directory -Force | Out-Null
-New-Item -Path ".\open-webui-data" -ItemType Directory -Force | Out-Null
-New-Item -Path ".\jarvis-data" -ItemType Directory -Force | Out-Null
-New-Item -Path ".\chroma-data" -ItemType Directory -Force | Out-Null
+foreach ($dir in @('.\\ollama-models', '.\\open-webui-data', '.\\jarvis-data', '.\\chroma-data')) {
+    New-Item -Path $dir -ItemType Directory -Force | Out-Null
+}
 
-# Start Docker containers
-docker compose up -d
+# Start core services: Ollama and ChromaDB
+Write-Host "Starting core services (ollama, chroma-db)..." -ForegroundColor Cyan
+docker compose up -d ollama chroma-db
 
-Write-Host "Waiting for services to start..." -ForegroundColor Yellow
-Start-Sleep -Seconds 10
+# Wait for ChromaDB to be available
+Write-Host "Waiting for ChromaDB (http://localhost:8001)..." -ForegroundColor Yellow
+do {
+    Start-Sleep -Seconds 5
+    try {
+Invoke-WebRequest -Uri http://localhost:8001/ -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop | Out-Null
+        $chromaUp = $true
+    } catch {
+        Write-Host "  → ChromaDB still starting..." -NoNewline
+        $chromaUp = $false
+    }
+} until ($chromaUp)
+Write-Host "ChromaDB is now available." -ForegroundColor Green
 
-# Create Jarvis model in Ollama
-Write-Host "Creating Jarvis model in Ollama..." -ForegroundColor Green
+# Build and start backend service: jarvis-backend
+Write-Host "Building and starting backend service (jarvis-backend)..." -ForegroundColor Cyan
+docker compose up -d --build jarvis-backend
 
-# Create modelfile locally
+# =======
+# End of core services startup
+
+# Wait for Ollama API to be available
+Write-Host "Waiting for Ollama API (http://localhost:11434/api/tags)..." -ForegroundColor Yellow
+do {
+    Start-Sleep -Seconds 5
+    try {
+        Invoke-WebRequest -Uri http://localhost:11434/api/tags -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop | Out-Null
+        $ollamaUp = $true
+    } catch {
+        Write-Host "  → Ollama still starting..." -NoNewline
+        $ollamaUp = $false
+    }
+} until ($ollamaUp)
+Write-Host "Ollama API is now available." -ForegroundColor Green
+
+# Wait for backend to be healthy
+Write-Host "Waiting for backend API (http://localhost:8000/health)..." -ForegroundColor Yellow
+do {
+    Start-Sleep -Seconds 5
+    try {
+        Invoke-WebRequest -Uri http://localhost:8000/health -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop | Out-Null
+        $backendUp = $true
+    } catch {
+        Write-Host "  → Backend still starting..." -NoNewline
+        $backendUp = $false
+    }
+} until ($backendUp)
+Write-Host "Backend API is now healthy." -ForegroundColor Green
+
+# Create Jarvis modelfile locally
+Write-Host "Creating Jarvis model file..." -ForegroundColor Cyan
 $modelfileContent = @"
 FROM mixtral:8x7b
 PARAMETER num_ctx 131072
@@ -100,24 +146,44 @@ You are Jarvis, an advanced bilingual AI assistant with expertise in both Englis
 - When knowledge retrieval fails, explain the attempt and suggest how the user might reformulate their question.
 """
 "@
+$modelfileContent | Out-File -FilePath ".\\jarvis.modelfile" -Encoding UTF8
 
-# Save modelfile locally
-$modelfileContent | Out-File -FilePath ".\jarvis.modelfile" -Encoding UTF8
+# Copy and create model
+Write-Host "Copying modelfile to Ollama container..." -ForegroundColor Cyan
+docker cp .\\jarvis.modelfile jarvis-ollama:/tmp/jarvis.modelfile
 
-# Copy the modelfile into the Ollama container
-Write-Host "Copying modelfile to Ollama container..." -ForegroundColor Yellow
-docker cp .\jarvis.modelfile jarvis-ollama:/tmp/jarvis.modelfile
+Write-Host "Creating Jarvis model in Ollama..." -ForegroundColor Cyan
+docker exec jarvis-ollama ollama create jarvis -f /tmp/jarvis.modelfile
 
-# Create the model in Ollama using the copied file
-Write-Host "Creating Jarvis model..." -ForegroundColor Green
-docker exec -it jarvis-ollama ollama create jarvis -f /tmp/jarvis.modelfile
+# Wait for the Jarvis model
+Write-Host "Waiting for Ollama to register 'jarvis' model..." -ForegroundColor Yellow
+do {
+    Start-Sleep -Seconds 3
+    $models = docker exec jarvis-ollama ollama list
+    if ($models -match "^jarvis$") { $modelUp = $true } else { Write-Host "  → Model not yet available..." -NoNewline; $modelUp = $false }
+} until ($modelUp)
+Write-Host "Jarvis model is now available in Ollama." -ForegroundColor Green
 
-Write-Host "`nJarvisAI system is running!" -ForegroundColor Green
-Write-Host "You can access the web interface at: http://localhost:3000" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "1. Open http://localhost:3000 in your browser"
-Write-Host "2. In the Open-WebUI interface, select the 'jarvis' model from the model selector"
-Write-Host "3. To add documents to Jarvis's knowledge base, use the RAG section in Open-WebUI"
-Write-Host ""
-Write-Host "To stop the system, run: docker compose down" -ForegroundColor Red
+# Start Open-WebUI service
+Write-Host "Starting Open-WebUI service..." -ForegroundColor Yellow
+docker compose up -d open-webui
+
+# Wait for Open-WebUI
+echo
+Write-Host "Waiting for Open-WebUI (http://localhost:3000)..." -ForegroundColor Yellow
+do {
+    Start-Sleep -Seconds 5
+    try {
+        Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop | Out-Null
+        $webuiUp = $true
+    } catch {
+        Write-Host "  → Open-WebUI still starting..." -NoNewline
+        $webuiUp = $false
+    }
+} until ($webuiUp)
+Write-Host "Open-WebUI is now available." -ForegroundColor Green
+
+Write-Host "`n🎉 JarvisAI system is running!" -ForegroundColor Green
+Write-Host "• API:   http://localhost:8000" -ForegroundColor Cyan
+Write-Host "• WebUI: http://localhost:3000" -ForegroundColor Cyan
+Write-Host "To stop the system: docker compose down" -ForegroundColor Red

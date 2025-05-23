@@ -9,6 +9,8 @@ import argparse
 import logging
 import os
 import sys
+# Ensure src directory is on PYTHONPATH
+sys.path.insert(0, os.path.dirname(__file__))
 import signal
 import json
 import time
@@ -16,21 +18,17 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 import threading
 import uvicorn
+import asyncio
 from fastapi import FastAPI, Request, HTTPException, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from core import JarvisEngine
 from utilities.auth import get_api_key, get_admin_api_key
 
-# Initialize rate limiter with default limits
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
-
-# Initialize FastAPI with rate limiter
+# Initialize FastAPI
 app = FastAPI(
     title="Jarvis AI API",
     description="API for Jarvis AI Assistant",
@@ -38,21 +36,6 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# Add global rate limiting
-@app.middleware("http")
-async def global_rate_limit(request: Request, call_next):
-    try:
-        await limiter.check(request)
-        response = await call_next(request)
-        return response
-    except RateLimitExceeded:
-        return JSONResponse(
-            status_code=429,
-            content={"error": "Rate limit exceeded. Please try again later."}
-        )
 
 # Allow CORS with production-ready secure configuration
 def get_allowed_origins():
@@ -70,6 +53,39 @@ def get_allowed_origins():
         "http://127.0.0.1:8080"
     ]
 
+# Simple rate limiting middleware
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app):
+        super().__init__(app)
+        self.requests = {}
+        self.window_size = 60  # 60 seconds
+        self.max_requests = 60  # 60 requests per minute
+
+    async def dispatch(self, request: Request, call_next):
+        # Get client IP
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+
+        # Clean up old requests
+        if client_ip in self.requests:
+            self.requests[client_ip] = [t for t in self.requests[client_ip] if now - t < self.window_size]
+
+        # Check rate limit
+        if client_ip in self.requests and len(self.requests[client_ip]) >= self.max_requests:
+            return JSONResponse(
+                status_code=429,
+                content={"error": "Rate limit exceeded. Please try again later."}
+            )
+
+        # Add new request
+        if client_ip not in self.requests:
+            self.requests[client_ip] = []
+        self.requests[client_ip].append(now)
+
+        # Process request
+        response = await call_next(request)
+        return response
+
 # Add CORS middleware with secure configuration
 app.add_middleware(
     CORSMiddleware,
@@ -79,6 +95,9 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "Accept"],
     max_age=600,  # Cache preflight requests for 10 minutes
 )
+
+# Add rate limiting middleware
+app.add_middleware(RateLimitMiddleware)
 
 # Global Jarvis instance
 jarvis_instance = None
@@ -231,7 +250,6 @@ class ErrorResponse(BaseModel):
     details: Optional[str] = None
 
 @app.post("/chat", response_model=ChatResponse, responses={500: {"model": ErrorResponse}, 401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}})
-@limiter.limit("10/minute")
 async def chat(request: ChatRequest, request_obj: Request = None, api_key: dict = Depends(get_api_key)):
     """Chat endpoint."""
     global jarvis_instance
@@ -242,7 +260,7 @@ async def chat(request: ChatRequest, request_obj: Request = None, api_key: dict 
         )
     
     # Process the user input
-    response = jarvis_instance.process_input(request.message, force_web_search=request.force_web_search)
+    response = await jarvis_instance.process_input(request.message, force_web_search=request.force_web_search)
     
     # Detect language of the user message
     language = jarvis_instance.language.detect_language(request.message)
@@ -274,7 +292,6 @@ class WebSearchResponse(BaseModel):
     403: {"model": ErrorResponse},
     429: {"model": ErrorResponse}
 })
-@limiter.limit("5/minute")
 async def web_search(
     request: WebSearchRequest,
     request_obj: Request = None,

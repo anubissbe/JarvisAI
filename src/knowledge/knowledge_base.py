@@ -18,7 +18,7 @@ from chromadb.config import Settings
 
 # Import web search functionality
 from .web_search import WebSearch
-from ..utilities.web_utils import get_domain_from_url
+from utilities.web_utils import get_domain_from_url
 
 class KnowledgeBase:
     """Knowledge base for the Jarvis AI Assistant.
