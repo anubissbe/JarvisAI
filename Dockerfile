@@ -1,40 +1,61 @@
-FROM python:3.10-slim
+# Use multi-stage build for a smaller final image
+FROM python:3.11-slim as builder
 
-WORKDIR /app
-
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
-    software-properties-common \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install additional Python packages for rate limiting
-RUN pip install fastapi-limiter redis slowapi
-
-# Copy requirements file
-COPY requirements.txt .
+# Create and activate virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy only application code to limit build context
-COPY requirements.txt .
-COPY src/ ./src/
+# Install spacy language models
+RUN python -m spacy download en_core_web_sm && \
+    python -m spacy download nl_core_news_sm && \
+    python -m spacy download de_core_news_sm
 
-# Create necessary directories
-RUN mkdir -p /root/.jarvis/memory /root/.jarvis/knowledge /root/.jarvis/logs
+# Final stage
+FROM python:3.11-slim
 
-# Add Python path
-ENV PYTHONPATH="/app:/app/src:${PYTHONPATH}"
-ENV LOG_LEVEL="INFO"
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Expose port for API
-EXPOSE 8000
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
 
-# Change working directory to src
-WORKDIR /app/src
+# Set environment variables
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONWARNINGS="ignore::UserWarning,ignore::FutureWarning" \
+    TZ=UTC
 
-# Command to run the application
-CMD ["python", "-m", "main", "--no-cli"]
+# Create non-root user
+RUN useradd -m -u 1000 jarvis
+
+# Set up working directory
+WORKDIR /app
+RUN mkdir -p /app/data /app/logs && \
+    chown -R jarvis:jarvis /app
+
+# Copy source code
+COPY --chown=jarvis:jarvis src/ ./src/
+
+# Switch to non-root user
+USER jarvis
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# Run the application
+CMD ["python", "src/main.py"]

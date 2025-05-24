@@ -1,0 +1,8 @@
+{
+  "CHROMADB_HOST": "chromadb",
+  "CHROMADB_PORT": 8000,
+  "CHROMADB_AUTH_PROVIDER": "basic",
+  "CHROMADB_AUTH_CREDENTIALS": null,
+  "ENABLE_VECTOR_STORE": true,
+  "VECTOR_STORE": "chroma"
+}

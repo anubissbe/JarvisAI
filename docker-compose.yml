@@ -1,119 +1,150 @@
+version: '3.8'
 
 services:
-  # Ollama service for running the LLM
   ollama:
-    image: ollama/ollama:latest
     container_name: jarvis-ollama
-    volumes:
-      - ./ollama-models:/root/.ollama:rw
+    image: ollama/ollama:latest
     ports:
-      - "127.0.0.1:11434:11434"  # Bind to localhost only
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 8G
+          cpus: '4'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
     networks:
-      - jarvis-network
-    # healthcheck disabled because curl is not available inside the ollama container
-    # healthcheck:
-    #  test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-    #  interval: 10s
-    #  timeout: 60s
-    #  retries: 10
-    security_opt:
-      - no-new-privileges:true
-    # Limit resources to prevent container from consuming all system resources
-    mem_limit: ${OLLAMA_MEMORY:-8G}
-    cpus: ${OLLAMA_CPUS:-4}
-    # Uncomment the following for GPU support
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+      - jarvis_net
 
-  # Open-WebUI for web interface
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:latest
+  webui:
     container_name: jarvis-webui
-    volumes:
-      - ./open-webui-data:/app/backend/data:rw
+    image: ghcr.io/open-webui/open-webui:main
     ports:
-      - "${WEBUI_PORT:-3000}:8080"
-    restart: unless-stopped
+      - "3000:8080"
     environment:
       - OLLAMA_API_BASE_URL=http://ollama:11434/api
-      - WEBUI_AUTH=${WEBUI_AUTH:-true}
-      - WEBUI_AUTH_SECRET=${WEBUI_AUTH_SECRET:-change_this_secret_in_production}
-      - WEBUI_ADMIN_PASSWORD=${WEBUI_ADMIN_PASSWORD:-admin_password_change_me}
-    depends_on:
-      - ollama
-    networks:
-      - jarvis-network
-    security_opt:
-      - no-new-privileges:true
-    mem_limit: ${WEBUI_MEMORY:-1G}
-    cpus: ${WEBUI_CPUS:-1}
-
-  # Python backend for Jarvis
-  jarvis-backend:
-    build:
-      context: ./src
-      dockerfile: ../Dockerfile
-    container_name: jarvis-backend
+      - NODE_ENV=production
+      - MAX_UPLOAD_SIZE=50MB
     volumes:
-      - ./jarvis-data:/root/.jarvis:rw
-    ports:
-      - "127.0.0.1:${API_PORT:-8000}:8000"  # Bind to localhost only
-    restart: unless-stopped
+      - webui_data:/app/backend/data
+      - ./webui-config.json:/app/backend/config.json
     depends_on:
-      - ollama
-      - chroma-db
-    networks:
-      - jarvis-network
-    environment:
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - JARVIS_API_AUTH_ENABLED=${JARVIS_API_AUTH_ENABLED:-true}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+      ollama:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    security_opt:
-      - no-new-privileges:true
-    mem_limit: ${API_MEMORY:-1G}
-    cpus: ${API_CPUS:-1}
-
-  # Chroma DB for vector storage
-  chroma-db:
-    image: ghcr.io/chroma-core/chroma:latest
-    container_name: jarvis-chroma
-    volumes:
-      - ./chroma-data:/data:z
-    environment:
-      - CHROMA_API_IMPL=rest
-      - PERSIST_DIRECTORY=/data
-      - CHROMA_SERVER_AUTH_CREDENTIALS_FILE=${CHROMA_CREDENTIALS_FILE:-}
-      - CHROMA_SERVER_AUTH_CREDENTIALS=${CHROMA_CREDENTIALS:-}
-      - CHROMA_SERVER_AUTH_PROVIDER=${CHROMA_AUTH_PROVIDER:-}
-    ports:
-      - "127.0.0.1:${CHROMA_PORT:-8001}:8000"  # Bind to localhost only
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
     networks:
-      - jarvis-network
-    security_opt:
-      - no-new-privileges:true
-    mem_limit: ${CHROMA_MEMORY:-2G}
-    cpus: ${CHROMA_CPUS:-1}
+      - jarvis_net
 
-# Define a custom network for container communication
+  chromadb:
+    container_name: jarvis-chromadb
+    build:
+      context: ./chromadb-custom
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_DB_IMPL=duckdb+parquet
+      - CHROMA_PERSISTENCE_DIRECTORY=/chroma/chroma
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ALLOW_RESET=false
+      - ANONYMIZED_TELEMETRY=false
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - jarvis_net
+
+  jarvis-backend:
+    container_name: jarvis-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./src:/app/src
+      - backend_data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - OLLAMA_API_URL=http://ollama:11434
+      - CHROMADB_HOST=chromadb
+      - CHROMADB_PORT=8000
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - WORKERS=2
+      - MAX_UPLOAD_SIZE_MB=50
+      - MEMORY_RETENTION_DAYS=365
+      - MEMORY_ARCHIVE_DAYS=730
+      - MAX_CONVERSATION_HISTORY=1000
+      - MEMORY_IMPORTANCE_THRESHOLD=0.5
+      - RATE_LIMIT=60/minute
+      - UPLOAD_RATE_LIMIT=10/minute
+      - REQUIRE_API_KEY=false
+      - API_KEY=${JARVIS_API_KEY:-}
+      - ALLOWED_ORIGINS=*
+    depends_on:
+      ollama:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - jarvis_net
+
+volumes:
+  ollama_data:
+    driver: local
+  webui_data:
+    driver: local
+  backend_data:
+    driver: local
+  chroma_data:
+    driver: local
+
 networks:
-  jarvis-network:
+  jarvis_net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-    # Enable internal network mode to prevent containers from accessing the internet
-    # unless specifically needed
-    # For production, consider enabling this and explicitly configure 
-    # internet access only for containers that need it (e.g., jarvis-backend for web search)
-    # internal: true
