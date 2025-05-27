@@ -1,0 +1,49 @@
+FROM ghcr.io/open-webui/open-webui:main
+
+# Metadata
+LABEL maintainer="JarvisAI Team"
+LABEL version="0.1"
+LABEL description="JarvisAI-0.1: Self-Learning AI Assistant with Persistent Memory"
+
+# Set environment variables
+ENV WEBUI_NAME="JarvisAI-0.1 (Powered by Open WebUI)"
+ENV ENABLE_SELF_LEARNING=true
+ENV MEMORY_ARCHITECTURE=dual
+
+# Install additional Python dependencies
+RUN pip install --no-cache-dir \
+    weaviate-client \
+    python-arango \
+    chromadb \
+    redis \
+    pydantic \
+    celery \
+    spacy \
+    numpy \
+    pandas \
+    torch \
+    transformers \
+    sentence-transformers \
+    fastapi-utils \
+    pytest \
+    black \
+    ruff \
+    mypy
+
+# Install spaCy language models
+RUN python -m spacy download en_core_web_md
+
+# Copy custom JarvisAI extensions
+COPY jarvisai /app/backend/jarvisai
+COPY plugins /app/backend/plugins
+COPY custom_ui /app/frontend/src/custom_ui
+
+# Override entry file to include JarvisAI initialization
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose the application port
+EXPOSE 8080
+
+# Set the entrypoint
+ENTRYPOINT ["/entrypoint.sh"]

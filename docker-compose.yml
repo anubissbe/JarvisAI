@@ -1,0 +1,159 @@
+version: '3.8'
+
+services:
+  # Main JarvisAI WebUI
+  jarvisai-webui:
+    build:
+      context: .
+      dockerfile: Dockerfile.jarvisai
+    ports:
+      - "3000:8080"
+    environment:
+      - WEBUI_NAME=JarvisAI-0.1 (Powered by Open WebUI)
+      - ENABLE_SELF_LEARNING=true
+      - MEMORY_ARCHITECTURE=dual
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - jarvisai_data:/app/backend/data
+      - ./plugins:/app/backend/plugins
+    depends_on:
+      - ollama
+      - memory-service
+      - weaviate
+      - arangodb
+      - chromadb
+      - redis
+
+  # Ollama for model deployment
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
+
+  # Memory Service
+  memory-service:
+    build:
+      context: ./services/memory
+      dockerfile: Dockerfile
+    environment:
+      - MEMORY_TYPE=hierarchical
+      - VECTOR_DB_URL=http://weaviate:8080
+      - GRAPH_DB_URL=http://arangodb:8529
+      - CHROMA_DB_URL=http://chromadb:8000
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - weaviate
+      - arangodb
+      - chromadb
+      - redis
+
+  # Learning Service
+  learning-service:
+    build:
+      context: ./services/learning
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MEMORY_SERVICE_URL=http://memory-service:8000
+    depends_on:
+      - ollama
+      - memory-service
+
+  # Document Processing Service
+  document-service:
+    build:
+      context: ./services/documents
+      dockerfile: Dockerfile
+    volumes:
+      - jarvisai_data:/app/data
+    environment:
+      - MEMORY_SERVICE_URL=http://memory-service:8000
+    depends_on:
+      - memory-service
+
+  # Vector Database
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.26.5
+    ports:
+      - "8080:8080"
+    environment:
+      - QUERY_DEFAULTS_LIMIT=25
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+      - DEFAULT_VECTORIZER_MODULE=none
+      - ENABLE_MODULES=text2vec-transformers
+      - TRANSFORMERS_INFERENCE_API=http://t2v-transformers:8080
+    depends_on:
+      - t2v-transformers
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    deploy:
+      resources:
+        limits:
+          memory: 100g
+    
+  # Text2Vec Transformers for Weaviate
+  t2v-transformers:
+    image: semitechnologies/transformers-inference:sentence-transformers-all-mpnet-base-v2
+    environment:
+      - ENABLE_CUDA=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
+  # Knowledge Graph
+  arangodb:
+    image: arangodb:3.11
+    environment:
+      - ARANGO_ROOT_PASSWORD=jarvisai
+    ports:
+      - "8529:8529"
+    volumes:
+      - arangodb_data:/var/lib/arangodb3
+    deploy:
+      resources:
+        limits:
+          memory: 50g
+
+  # Recent Memory Vector DB
+  chromadb:
+    image: ghcr.io/chroma-core/chroma:latest
+    volumes:
+      - chromadb_data:/chroma/chroma
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 25g
+
+  # Session Memory Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    deploy:
+      resources:
+        limits:
+          memory: 10g
+
+volumes:
+  jarvisai_data:
+  ollama_data:
+  weaviate_data:
+  arangodb_data:
+  chromadb_data:
+  redis_data:
