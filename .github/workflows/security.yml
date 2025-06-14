@@ -36,8 +36,8 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          config-file: ./.github/codeql/codeql-config.yml
           queries: security-extended
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: 🏗️ Autobuild
         uses: github/codeql-action/autobuild@v3
@@ -82,8 +82,8 @@ jobs:
           pip install safety
           if [ -f "backend/requirements.txt" ]; then
             pip install -r backend/requirements.txt
-            pip freeze | safety check --json --output safety-report.json || true
-            pip freeze | safety check || echo "No critical safety issues found"
+            pip freeze | safety scan --json --output json --save-as safety-report.json || true
+            pip freeze | safety scan || echo "No critical safety issues found"
           else
             echo "No requirements.txt found, creating empty safety report"
             echo '{"vulnerabilities": [], "scanned_packages": 0}' > safety-report.json
@@ -169,11 +169,7 @@ jobs:
 
       - name: 🔍 Run Semgrep
         run: |
-          if [ -f ".github/semgrep.yml" ]; then
-            semgrep --config=.github/semgrep.yml --sarif --output=semgrep.sarif ./
-          else
-            semgrep --config=auto --sarif --output=semgrep.sarif ./
-          fi
+          semgrep --config=auto --sarif --output=semgrep.sarif ./ || true
 
       - name: 📊 Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3

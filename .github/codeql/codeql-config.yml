@@ -1,32 +1,10 @@
-name: "CodeQL Security Analysis"
+name: "CodeQL"
 
-# Use default queries with security focus
-disable-default-queries: false
-
-# Query suites to use
-queries:
-  - uses: security-extended
-
-# Paths to exclude from analysis
 paths-ignore:
-  - "node_modules/**"
+  - "node_modules"
   - "**/*.min.js"
-  - "**/dist/**"
-  - "**/build/**"
-  - "**/.git/**"
-  - "**/coverage/**"
-  - "**/htmlcov/**"
-  - "**/__pycache__/**"
-  - "**/vendor/**"
-  - "**/venv/**"
-  - "**/.venv/**"
-  - "**/test_data/**"
-  - "**/fixtures/**"
-
-# Paths to analyze
-paths:
-  - "backend/**/*.py"
-  - "scripts/**/*.py"
-  - "scripts/**/*.js"
-  - "**/*.py"
-  - "**/*.js"
+  - "**/dist"
+  - "**/build"
+  - "**/coverage"
+  - "**/__pycache__"
+  - "**/vendor"
