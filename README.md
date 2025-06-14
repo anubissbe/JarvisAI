@@ -439,3 +439,4 @@ If JarvisAI helps you or your organization, consider supporting its development:
 [![Buy Me A Coffee](https://img.shields.io/badge/☕-Support%20Development-orange?style=social&logo=buy-me-a-coffee)](https://buymeacoffee.com/anubissbe)
 
 </div># Test trigger
+# Trigger workflows with SonarCloud token
