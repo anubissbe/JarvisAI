@@ -4,6 +4,36 @@
 
 <div align="center">
 
+## 📊 Project Status (Live from Task Manager)
+
+### Current Phase: 📋 **PLANNING**
+### Overall Progress: ![0%](https://progress-bar.dev/0) **0 of 135 tasks completed**
+
+| Component | Status | Progress | Tasks | Notes |
+|-----------|--------|----------|-------|-------|
+| **Project Planning** | 🟡 In Progress | ![100%](https://progress-bar.dev/100) | ✅ Done | Architecture defined, tasks created |
+| **Infrastructure Setup** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~15 | Docker, monitoring, networking |
+| **Core Backend** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~25 | FastAPI + OAuth 2.1 implementation |
+| **Frontend UI** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~20 | Next.js 15 + shadcn/ui |
+| **AI Engine** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~20 | Ollama + LangGraph setup |
+| **Vector Database** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~15 | Milvus + NVIDIA CAGRA |
+| **Document Processing** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~10 | Docling + PaddleOCR |
+| **Therapeutic Mode** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~10 | Safespace model integration |
+| **Security & Auth** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~10 | OAuth 2.1 + PKCE |
+| **Testing & QA** | 🔴 Not Started | ![0%](https://progress-bar.dev/0) | 0/~10 | Unit, integration, E2E tests |
+
+### 📈 Task Breakdown
+- **Total Tasks**: 135
+- **Completed**: 0 (0%)
+- **In Progress**: 0 (0%)
+- **Pending**: 135 (100%)
+- **Estimated Hours**: ~531 hours
+
+### 🎯 Next Milestone: Infrastructure Setup
+Begin with Docker environment, PostgreSQL, Redis, and monitoring stack setup.
+
+---
+
 [![CI/CD Pipeline](https://github.com/anubissbe/JarvisAI/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/anubissbe/JarvisAI/actions/workflows/ci-cd.yml)
 [![Security Scan](https://github.com/anubissbe/JarvisAI/actions/workflows/security.yml/badge.svg)](https://github.com/anubissbe/JarvisAI/actions/workflows/security.yml)
 [![Code Quality](https://github.com/anubissbe/JarvisAI/actions/workflows/code-quality.yml/badge.svg)](https://github.com/anubissbe/JarvisAI/actions/workflows/code-quality.yml)
