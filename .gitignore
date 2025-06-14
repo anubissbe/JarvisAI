@@ -1,47 +1,74 @@
-# JarvisAI .gitignore
+# JarvisAI .gitignore - Comprehensive Data Protection
 
-# Environment files
-.env
-.env.local
-.env.production
-.env.staging
+# ====================
+# SECURITY & SECRETS
+# ====================
+.env*
 *.env
-
-# Secrets and credentials
 secrets/
 vault-data/
 *.key
 *.pem
 *.p12
 *.pfx
+*.keystore
+*.jks
+*.crt
+*.cert
+*.ca-bundle
+*.ca-crt
 id_rsa*
+ssh_key*
+jwt-key*
+oauth-*
+api-key*
+token*
+credentials*
+*.credentials
+*-secret*
+*secret*
+password*
+*.pwd
 
-# Logs
-logs/
-*.log
+# ====================
+# DEVELOPMENT FILES
+# ====================
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vim/
+.emacs.d/
+*.sublime-workspace
+*.sublime-project
+
+# ====================
+# NODE.JS / FRONTEND
+# ====================
+node_modules/
+.npm/
+.yarn/
+.pnpm/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
+.next/
+.nuxt/
+out/
+build/
+dist/
 coverage/
-*.lcov
-
-# nyc test coverage
 .nyc_output
+.cache/
+.eslintcache
+.stylelintcache
 
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# Python
+# ====================
+# PYTHON / BACKEND
+# ====================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -69,9 +96,6 @@ MANIFEST
 htmlcov/
 .tox/
 .nox/
-.cache
-
-# Virtual environments
 .venv/
 env/
 venv/
@@ -79,171 +103,244 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDEs and editors
-.vscode/
-.idea/
+# ====================
+# AI/ML SPECIFIC
+# ====================
+# Model files (large binaries)
+models/
+model-cache/
+*.bin
+*.gguf
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.h5
+*.hdf5
+*.pb
+*.tflite
+*.mlmodel
+
+# Training data and outputs
+training-data/
+datasets/
+data/
+*.csv
+*.parquet
+*.jsonl
+*.ndjson
+checkpoints/
+wandb/
+tensorboard-logs/
+experiments/
+
+# Vector databases
+milvus-data/
+qdrant-data/
+chroma-data/
+weaviate-data/
+pinecone-data/
+embeddings/
+indices/
+
+# GPU cache
+.nv/
+.nvidia/
+.torch/
+.transformers/
+.cache/huggingface/
+
+# ====================
+# DATABASE & STORAGE
+# ====================
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+pgdata/
+postgres-data/
+mysql-data/
+mongodb-data/
+redis-data/
+elasticsearch-data/
+
+# Object storage
+minio-data/
+s3-data/
+uploads/
+downloads/
+attachments/
+user-files/
+
+# ====================
+# DOCKER & CONTAINERS
+# ====================
+docker-compose.override.yml
+docker-compose.local.yml
+.dockerignore.local
+*.dockerfile.local
+.docker/
+
+# ====================
+# MONITORING & LOGS
+# ====================
+logs/
+*.log
+grafana-data/
+prometheus-data/
+loki-data/
+jaeger-data/
+elastic-data/
+kibana-data/
+
+# ====================
+# BACKUP & TEMPORARY
+# ====================
+backups/
+backup-*/
+*.backup
+*.bak
+dumps/
+exports/
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
 *.swp
 *.swo
-*~
-.DS_Store
-Thumbs.db
 
-# Operating System Files
+# ====================
+# CONFIGURATION
+# ====================
+config.local.*
+local.*
+*.local
+.env.local
+.env.production.local
+.env.development.local
+
+# ====================
+# TESTING
+# ====================
+test-data/
+test-results/
+test-reports/
+coverage-reports/
+e2e-results/
+screenshots/
+videos/
+*.test.log
+
+# ====================
+# RUNTIME DATA
+# ====================
+pids/
+*.pid
+*.seed
+*.pid.lock
+runtime/
+sessions/
+
+# ====================
+# OPERATING SYSTEM
+# ====================
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
+Icon
+.AppleDouble
+.LSOverride
+
+# Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Docker
-.dockerignore
-docker-compose.override.yml
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-pgdata/
-postgres-data/
+# ====================
+# LARGE BINARY FILES
+# ====================
+*.iso
+*.dmg
+*.tar.gz
+*.zip
+*.7z
+*.rar
+*.tar.xz
+*.tar.bz2
 
-# Redis data
-redis-data/
-
-# MinIO data
-minio-data/
-
-# Vector database data
-milvus-data/
-qdrant-data/
-
-# Model files (large binaries)
-models/
-*.bin
-*.gguf
-*.safetensors
-model-cache/
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-*.temp
-
-# Monitoring data
-grafana-data/
-prometheus-data/
-loki-data/
-
-# Build outputs
-.next/
-out/
-build/
-dist/
-
-# Cache directories
-.cache/
-.npm/
-.yarn/
-
-# Lock files (keep package-lock.json but ignore others)
-yarn.lock
-pnpm-lock.yaml
-
-# Backup files
-*.bak
-*.backup
-backup-*/
-
-# GPU/CUDA cache
-.nv/
-.nvidia/
-
-# Jupyter
+# ====================
+# JUPYTER NOTEBOOKS
+# ====================
 .ipynb_checkpoints/
 *.ipynb
 
-# Local development
-local/
-dev-data/
-test-data/
-
-# Documentation build
+# ====================
+# DOCUMENTATION BUILD
+# ====================
 site/
 _site/
+docs/_build/
+docs/build/
 
+# ====================
+# INFRASTRUCTURE
+# ====================
 # Terraform
 *.tfstate
 *.tfstate.*
 .terraform/
 .terraformrc
 terraform.rc
+terraform.tfvars
+*.auto.tfvars
 
 # Kubernetes
 *.kubeconfig
+kube-config
+.kube/
 
-# Certificates
-*.crt
-*.cert
+# Ansible
+*.retry
+.vault_pass
 
-# Large files
-*.iso
-*.dmg
-*.tar.gz
-*.zip
-*.7z
+# ====================
+# PERSONAL FILES
+# ====================
+# Personal notes and ideas
+*idea*.txt
+*notes*.md
+*scratch*.txt
+*todo*.txt
+personal/
+private/
+drafts/
 
-# Mac specific
-.AppleDouble
-.LSOverride
-Icon
+# ====================
+# PACKAGE MANAGERS
+# ====================
+# Keep package-lock.json but ignore others
+yarn.lock
+pnpm-lock.yaml
 
-# Windows specific
-desktop.ini
-$RECYCLE.BIN/
+# ====================
+# MISC
+# ====================
+.history/
+.vscode-test/
+.vs/
 
-# Linux specific
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-
-# JetBrains
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# VS Code
-.vscode/settings.json
-.vscode/tasks.json
-.vscode/launch.json
-.vscode/extensions.json
-
-# Vim
-*.swp
-*.swo
-.vimrc.local
-
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-
-# Sublime Text
-*.sublime-workspace
-*.sublime-project
-
-# Local configuration override
-config.local.yml
-config.local.json
-
-# Test artifacts
-test-results/
-test-reports/
-*.test.log
+# Custom ignore patterns (add your own below)
+# ==========================================
