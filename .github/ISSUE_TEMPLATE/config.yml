@@ -1,0 +1,21 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 General Discussion
+    url: https://github.com/anubissbe/JarvisAI/discussions
+    about: Ask questions, share ideas, and discuss JarvisAI with the community
+  
+  - name: 📚 Documentation
+    url: https://github.com/anubissbe/JarvisAI/blob/main/README.md
+    about: Read the complete documentation and setup guides
+  
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/anubissbe/JarvisAI/security/advisories/new
+    about: Report security vulnerabilities privately through GitHub Security Advisory
+  
+  - name: ☕ Support Development
+    url: https://buymeacoffee.com/anubissbe
+    about: Support JarvisAI development with a coffee donation
+  
+  - name: 📧 Direct Contact
+    url: mailto:bert@telkom.be
+    about: Contact the maintainer directly for business or partnership inquiries

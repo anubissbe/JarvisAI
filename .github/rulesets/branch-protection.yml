@@ -1,0 +1,76 @@
+# GitHub Repository Rulesets Configuration
+# This file documents the recommended branch protection rules
+# Note: Rulesets must be configured through GitHub UI or API
+
+name: "Branch Protection Ruleset"
+description: "Comprehensive branch protection for JarvisAI repository"
+
+# Target branches
+target:
+  branches:
+    - "main"
+    - "develop"
+    - "release/*"
+
+# Protection rules
+rules:
+  # Require pull requests
+  pull_request:
+    required: true
+    dismiss_stale_reviews: true
+    require_code_owner_reviews: true
+    required_approving_review_count: 2
+    require_last_push_approval: true
+    bypass_pull_request_allowances:
+      users: []
+      teams: []
+      apps: []
+
+  # Status checks
+  required_status_checks:
+    strict: true
+    checks:
+      - context: "ci-cd"
+        app_id: 15368  # GitHub Actions
+      - context: "security"
+        app_id: 15368
+      - context: "code-quality"
+        app_id: 15368
+      - context: "CodeQL"
+        app_id: 15368
+
+  # Branch restrictions
+  restrictions:
+    users: []
+    teams: []
+    apps: []
+
+  # Force push protection
+  enforce_admins: true
+  allow_force_pushes: false
+  allow_deletions: false
+
+  # Linear history
+  required_linear_history: true
+
+  # Conversation resolution
+  required_conversation_resolution: true
+
+# Additional settings
+bypass_settings:
+  # Allow repository admins to bypass
+  enforce_admins: false
+  
+  # Emergency bypass for critical fixes
+  bypass_pull_request_allowances:
+    users:
+      - "anubissbe"  # Repository owner
+    teams: []
+    apps: []
+
+# Merge settings
+merge_settings:
+  allow_merge_commit: true
+  allow_squash_merge: true
+  allow_rebase_merge: false
+  delete_branch_on_merge: true
