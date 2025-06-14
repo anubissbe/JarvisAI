@@ -10,7 +10,7 @@ The repository now has **3 comprehensive rulesets** configured to protect all br
 
 #### Rules Applied:
 - ✅ **Pull Request Required**: 1 approval minimum
-- ✅ **Dismiss Stale Reviews**: When new commits pushed
+- ✅ **Dismiss Stale Reviews**: When new commits are pushed
 - ✅ **Conversation Resolution**: Required before merge
 - ✅ **Required Status Checks**: Must pass before merge
   - `ci-cd` (CI/CD Pipeline)
