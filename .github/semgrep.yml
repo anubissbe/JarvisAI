@@ -1,0 +1,50 @@
+# Semgrep Configuration for JarvisAI
+# https://semgrep.dev/docs/writing-rules/rule-syntax/
+
+rules:
+  # Include default security rules
+  - "r2c/security-audit"
+  - "r2c/dockerfile"
+  - "r2c/python-security"
+  - "r2c/javascript-security"
+  
+# Paths to scan
+paths:
+  include:
+    - "backend/"
+    - "frontend/"
+    - "scripts/"
+    - "**/*.py"
+    - "**/*.js"
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/Dockerfile"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/*.json"
+  
+  exclude:
+    - "node_modules/"
+    - "**/*.min.js"
+    - "**/dist/"
+    - "**/build/"
+    - "**/.git/"
+    - "**/coverage/"
+    - "**/htmlcov/"
+    - "**/__pycache__/"
+    - "**/vendor/"
+    - "**/.venv/"
+    - "**/venv/"
+
+# Severity filtering
+severity:
+  - ERROR
+  - WARNING
+
+# Output format
+output: sarif
+
+# Confidence filtering
+confidence:
+  - HIGH
+  - MEDIUM

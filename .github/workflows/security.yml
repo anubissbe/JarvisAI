@@ -32,7 +32,7 @@ jobs:
         uses: github/codeql-action/init@v2
         with:
           languages: ${{ matrix.language }}
-          queries: security-extended,security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: 🏗️ Autobuild
         uses: github/codeql-action/autobuild@v2
@@ -163,7 +163,11 @@ jobs:
 
       - name: 🔍 Run Semgrep
         run: |
-          semgrep --config=auto --sarif --output=semgrep.sarif ./
+          if [ -f ".github/semgrep.yml" ]; then
+            semgrep --config=.github/semgrep.yml --sarif --output=semgrep.sarif ./
+          else
+            semgrep --config=auto --sarif --output=semgrep.sarif ./
+          fi
 
       - name: 📊 Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
