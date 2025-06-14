@@ -161,9 +161,8 @@ jobs:
             -Dsonar.projectKey=anubissbe_JarvisAI
             -Dsonar.organization=anubissbe
             -Dsonar.python.coverage.reportPaths=backend/coverage.xml
-            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
-            -Dsonar.sources=backend/,frontend/
-            -Dsonar.exclusions=**/*test*/**,**/__pycache__/**,**/node_modules/**
+            -Dsonar.sources=backend/
+            -Dsonar.exclusions=**/*test*/**,**/__pycache__/**
 
   # 📈 Performance Benchmarks
   performance:
