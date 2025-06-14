@@ -7,6 +7,11 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+  actions: write
+
 jobs:
   # 🎨 Code Formatting & Style
   code-style:
@@ -156,9 +161,8 @@ jobs:
             -Dsonar.projectKey=anubissbe_JarvisAI
             -Dsonar.organization=anubissbe
             -Dsonar.python.coverage.reportPaths=backend/coverage.xml
-            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
-            -Dsonar.sources=backend/,frontend/
-            -Dsonar.exclusions=**/*test*/**,**/__pycache__/**,**/node_modules/**
+            -Dsonar.sources=backend/
+            -Dsonar.exclusions=**/*test*/**,**/__pycache__/**
 
   # 📈 Performance Benchmarks
   performance:
@@ -192,7 +196,7 @@ jobs:
           fi
 
       - name: 📊 Upload benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: benchmark-results

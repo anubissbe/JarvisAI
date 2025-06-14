@@ -1,0 +1,10 @@
+name: "CodeQL"
+
+paths-ignore:
+  - "node_modules"
+  - "**/*.min.js"
+  - "**/dist"
+  - "**/build"
+  - "**/coverage"
+  - "**/__pycache__"
+  - "**/vendor"
