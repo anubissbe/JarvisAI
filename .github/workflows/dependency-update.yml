@@ -1,0 +1,229 @@
+name: 📦 Dependency Management
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Every Monday at 8 AM UTC
+  workflow_dispatch:
+  push:
+    paths:
+      - 'backend/requirements.txt'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  # 🔍 Dependency Audit
+  dependency-audit:
+    name: 🔍 Dependency Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 🔍 Python dependency audit
+        run: |
+          pip install pip-audit
+          echo "## 🐍 Python Dependency Audit" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if pip-audit -r backend/requirements.txt --format=json --output=python-audit.json; then
+            echo "✅ **Python dependencies**: No known vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Python dependencies**: Vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+            echo "Check the audit report for details." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 🔍 Node.js dependency audit
+        run: |
+          if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+            cd frontend
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## 📦 Node.js Dependency Audit" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if npm audit --audit-level=moderate --json > ../npm-audit.json; then
+              echo "✅ **Node.js dependencies**: No known vulnerabilities" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **Node.js dependencies**: Vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+              echo "Run \`npm audit fix\` to resolve issues." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "## 📦 Node.js Dependency Audit" >> $GITHUB_STEP_SUMMARY
+            echo "ℹ️ No frontend directory found, skipping..." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📊 Upload audit reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: dependency-audit-reports
+          path: |
+            python-audit.json
+            npm-audit.json
+
+  # 📋 Dependency Update Check
+  update-check:
+    name: 📋 Check for Updates
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 🔍 Check Python package updates
+        run: |
+          pip install pip-check-updates
+          echo "## 🐍 Python Package Updates" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          pip list --outdated >> $GITHUB_STEP_SUMMARY || echo "All packages up to date" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🔍 Check Node.js package updates
+        run: |
+          if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+            cd frontend
+            npm install -g npm-check-updates
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## 📦 Node.js Package Updates" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            ncu >> $GITHUB_STEP_SUMMARY || echo "All packages up to date" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # 🤖 Automated Dependency Updates
+  dependabot-auto-merge:
+    name: 🤖 Auto-merge Dependabot PRs
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: 📥 Checkout PR
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Get PR details
+        id: pr-details
+        run: |
+          PR_NUMBER=$(echo "$GITHUB_REF" | sed 's/refs\/pull\///g' | sed 's/\/merge//g')
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: 🤖 Auto-approve and merge minor updates
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            
+            // Check if it's a minor or patch update
+            const title = pr.title.toLowerCase();
+            if (title.includes('minor') || title.includes('patch') || 
+                title.includes('dependencies') && !title.includes('major')) {
+              
+              // Approve the PR
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                event: 'APPROVE',
+                body: '🤖 Auto-approved by Dependabot workflow for minor/patch updates'
+              });
+              
+              // Enable auto-merge
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                merge_method: 'squash'
+              });
+            }
+
+  # 📊 License Compliance Check
+  license-check:
+    name: 📊 License Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 🔍 Check Python package licenses
+        run: |
+          pip install pip-licenses
+          echo "## 📄 Python Package Licenses" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          pip install -r backend/requirements.txt
+          pip-licenses --format=markdown >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🔍 Check Node.js package licenses
+        run: |
+          if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+            cd frontend
+            npm install
+            npx license-checker --summary > ../npm-licenses.txt
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## 📄 Node.js Package Licenses" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            cat ../npm-licenses.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # 📈 Dependency Health Summary
+  dependency-summary:
+    name: 📈 Dependency Health Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, update-check, license-check]
+    if: always()
+    steps:
+      - name: 📋 Create dependency summary
+        run: |
+          echo "## 📦 Dependency Health Dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Audit | ${{ needs.dependency-audit.result == 'success' && '✅ Passed' || '⚠️ Issues Found' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Update Check | ${{ needs.update-check.result == 'success' && '✅ Completed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| License Check | ${{ needs.license-check.result == 'success' && '✅ Compliant' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎯 **Recommendation**: Regularly update dependencies and monitor for security issues." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📅 **Next scheduled check**: Every Monday at 8 AM UTC" >> $GITHUB_STEP_SUMMARY

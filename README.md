@@ -4,6 +4,10 @@
 
 <div align="center">
 
+[![CI/CD Pipeline](https://github.com/anubissbe/JarvisAI/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/anubissbe/JarvisAI/actions/workflows/ci-cd.yml)
+[![Security Scan](https://github.com/anubissbe/JarvisAI/actions/workflows/security.yml/badge.svg)](https://github.com/anubissbe/JarvisAI/actions/workflows/security.yml)
+[![Code Quality](https://github.com/anubissbe/JarvisAI/actions/workflows/code-quality.yml/badge.svg)](https://github.com/anubissbe/JarvisAI/actions/workflows/code-quality.yml)
+
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
@@ -404,6 +408,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Issues**: [GitHub Issues](https://github.com/anubissbe/JarvisAI/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/anubissbe/JarvisAI/discussions)
 
+## ☕ Support the Project
+
+If JarvisAI helps you or your organization, consider supporting its development:
+
+<div align="center">
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support%20development-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/anubissbe)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-support%20development-pink?style=for-the-badge&logo=github)](https://github.com/sponsors/anubissbe)
+
+*Your support helps maintain and improve JarvisAI for everyone* ❤️
+
+</div>
+
+### Why Support?
+
+- 🚀 **Accelerate Development**: Faster feature implementation
+- 🐛 **Better Support**: Priority bug fixes and responses
+- 📚 **More Documentation**: Comprehensive guides and tutorials
+- 🔬 **Research & Innovation**: Cutting-edge AI features
+- 🌍 **Community Growth**: Better resources for everyone
+
 ---
 
 <div align="center">
@@ -411,5 +436,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **JarvisAI** - Built for the future of AI assistance
 
 [![Star this repo](https://img.shields.io/github/stars/anubissbe/JarvisAI?style=social)](https://github.com/anubissbe/JarvisAI)
+[![Buy Me A Coffee](https://img.shields.io/badge/☕-Support%20Development-orange?style=social&logo=buy-me-a-coffee)](https://buymeacoffee.com/anubissbe)
 
 </div>
