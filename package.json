@@ -1,0 +1,20 @@
+{
+  "name": "jarvisai",
+  "version": "1.0.0",
+  "description": "A comprehensive, privacy-focused AI assistant leveraging dual GPU acceleration for advanced capabilities including document processing, therapeutic support, and multi-agent orchestration.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "pg": "^8.16.0"
+  }
+}

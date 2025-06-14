@@ -1,0 +1,257 @@
+# Development Docker Compose for Single GPU (RTX 5090 32GB)
+version: '3.8'
+
+x-logging: &loki-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+networks:
+  jarvis_dev:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  milvus_data:
+  minio_data:
+  model_cache:  # Single cache for dev
+  grafana_data:
+  prometheus_data:
+  rabbitmq_data:
+
+services:
+  # Single Ollama instance for RTX 5090
+  ollama:
+    image: ollama/ollama:latest
+    container_name: jarvis_ollama_dev
+    ports:
+      - "11434:11434"
+    networks:
+      - jarvis_dev
+    volumes:
+      - model_cache:/root/.ollama
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_MAX_LOADED_MODELS=5  # Can handle more with 32GB
+      - OLLAMA_NUM_PARALLEL=6       # Higher parallelism
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_KV_CACHE_TYPE=q8_0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # API Gateway (FastAPI)
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    networks:
+      - jarvis_dev
+    volumes:
+      - ./backend:/app  # Hot reload for development
+    environment:
+      - DATABASE_URL=postgresql://jarvis_user:jarvis_dev_pass@postgres:5432/jarvis
+      - REDIS_URL=redis://redis:6379
+      - MILVUS_HOST=milvus
+      - OLLAMA_HOST=http://ollama:11434  # Single instance
+      - JWT_SECRET=dev_secret_key_for_local_development_only
+      - DEV_MODE=true
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - postgres
+      - redis
+      - milvus
+      - ollama
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    networks:
+      - jarvis_dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Preserve node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=dev_nextauth_secret
+    command: npm run dev
+
+  # Milvus Vector Database (GPU Accelerated)
+  milvus:
+    image: milvusdb/milvus:v2.4.0-gpu-nvidia
+    container_name: jarvis_milvus_dev
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    networks:
+      - jarvis_dev
+    volumes:
+      - milvus_data:/var/lib/milvus
+    environment:
+      - ETCD_ENDPOINTS=etcd:2379
+      - MINIO_ADDRESS=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - QDRANT__GPU__INDEXING=true
+    depends_on:
+      - etcd
+      - minio
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # PostgreSQL with pgvector
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    ports:
+      - "5432:5432"
+    networks:
+      - jarvis_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_USER=jarvis_user
+      - POSTGRES_PASSWORD=jarvis_dev_pass
+      - POSTGRES_DB=jarvis
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jarvis_user -d jarvis"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis/redis-stack:7.4.0-v1
+    ports:
+      - "6379:6379"
+      - "8001:8001"  # RedisInsight
+    networks:
+      - jarvis_dev
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - jarvis_dev
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # RabbitMQ for Event-Driven Architecture
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - jarvis_dev
+    environment:
+      - RABBITMQ_DEFAULT_USER=jarvis
+      - RABBITMQ_DEFAULT_PASS=jarvis_dev
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # etcd for Milvus
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    networks:
+      - jarvis_dev
+    environment:
+      - ETCD_AUTO_COMPACTION_RETENTION=1
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+    command: etcd -advertise-client-urls=http://0.0.0.0:2379 -listen-client-urls=http://0.0.0.0:2379 --data-dir /etcd
+    volumes:
+      - ./etcd:/etcd
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    networks:
+      - jarvis_dev
+    volumes:
+      - ./monitoring/prometheus-dev.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    networks:
+      - jarvis_dev
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+
+  # NVIDIA GPU Exporter for Monitoring
+  nvidia-gpu-exporter:
+    image: utkuozdemir/nvidia_gpu_exporter:latest
+    networks:
+      - jarvis_dev
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

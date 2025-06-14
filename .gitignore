@@ -1,0 +1,249 @@
+# JarvisAI .gitignore
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# Secrets and credentials
+secrets/
+vault-data/
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+pgdata/
+postgres-data/
+
+# Redis data
+redis-data/
+
+# MinIO data
+minio-data/
+
+# Vector database data
+milvus-data/
+qdrant-data/
+
+# Model files (large binaries)
+models/
+*.bin
+*.gguf
+*.safetensors
+model-cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Monitoring data
+grafana-data/
+prometheus-data/
+loki-data/
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+
+# Lock files (keep package-lock.json but ignore others)
+yarn.lock
+pnpm-lock.yaml
+
+# Backup files
+*.bak
+*.backup
+backup-*/
+
+# GPU/CUDA cache
+.nv/
+.nvidia/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Local development
+local/
+dev-data/
+test-data/
+
+# Documentation build
+site/
+_site/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraformrc
+terraform.rc
+
+# Kubernetes
+*.kubeconfig
+
+# Certificates
+*.crt
+*.cert
+
+# Large files
+*.iso
+*.dmg
+*.tar.gz
+*.zip
+*.7z
+
+# Mac specific
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows specific
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux specific
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# Vim
+*.swp
+*.swo
+.vimrc.local
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Local configuration override
+config.local.yml
+config.local.json
+
+# Test artifacts
+test-results/
+test-reports/
+*.test.log

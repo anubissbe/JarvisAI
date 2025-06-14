@@ -1,0 +1,958 @@
+# Jarvis: Comprehensive Implementation Blueprint for Self-Hosted Super AI Assistant
+
+## System architecture overview
+
+This blueprint presents a production-ready architecture for "Jarvis" - a self-hosted AI assistant leveraging dual NVIDIA V100 GPUs (32GB total VRAM) on HP ProLiant G10 hardware. The system integrates multiple cutting-edge technologies to deliver a comprehensive, privacy-focused AI assistant with advanced capabilities ranging from document processing to therapeutic support.
+
+## Technology stack recommendations
+
+### Core Infrastructure
+- **Frontend Framework**: Next.js 14+ with TypeScript for optimal performance and developer experience
+- **UI Components**: assistant-ui + shadcn/ui for specialized AI chat interfaces
+- **Authentication**: Hybrid session-JWT approach with OAuth2 integration (Google, GitHub)
+- **Backend Framework**: FastAPI (Python) for high-performance API services
+- **LLM Backend**: Ollama with dual V100 GPU optimization
+- **Vector Database**: Milvus for scalable RAG implementation
+- **Document Processing**: Docling (IBM) + PaddleOCR for comprehensive parsing
+- **Multi-Agent Framework**: LangGraph for complex orchestration
+- **Container Orchestration**: Docker Compose for single-host deployment
+
+### Supporting Services
+- **Traditional Database**: PostgreSQL 15 for relational data
+- **Caching Layer**: Redis for session management and semantic caching
+- **Search Engine**: OpenSearch for full-text search capabilities
+- **Monitoring Stack**: Prometheus + Grafana + Loki for observability
+- **Object Storage**: MinIO for document and model storage
+
+## Hardware optimization strategy
+
+### GPU Configuration for Dual V100s
+```bash
+# Environment variables for Ollama
+export CUDA_VISIBLE_DEVICES=0,1
+export OLLAMA_HOST=0.0.0.0:11434
+export OLLAMA_KEEP_ALIVE=24h
+export OLLAMA_MAX_LOADED_MODELS=3
+export OLLAMA_NUM_PARALLEL=4
+export OLLAMA_FLASH_ATTENTION=1
+export OLLAMA_KV_CACHE_TYPE=q8_0
+```
+
+### Recommended LLM Models
+- **Primary Models**: DeepSeek-R1 14B, LLaMA 3.1 8B, Mistral 7B
+- **Specialized Models**: Qwen2.5 7B (multilingual), Phi-3 14B (reasoning)
+- **Embedding Model**: BGE-M3 for superior multilingual RAG performance
+
+### Resource Allocation
+- **GPU Memory**: 14GB per model + 2GB computation buffer
+- **System RAM**: 64GB OS/applications, 192GB vector operations
+- **CPU Threads**: 16 for embedding generation, 16 for query processing
+
+## Docker deployment architecture
+
+### Complete Docker Compose Configuration
+```yaml
+version: '3.8'
+
+x-logging: &loki-logging
+  driver: loki
+  options:
+    loki-url: "http://loki:3100/loki/api/v1/push"
+    loki-external-labels: service={{.Name}},container={{.ID}}
+
+x-security: &security-defaults
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+  backend:
+    internal: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+  ai_network:
+    internal: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.3.0/24
+  monitoring:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  milvus_data:
+  opensearch_data:
+  minio_data:
+  model_cache:
+  grafana_data:
+  prometheus_data:
+  loki_data:
+
+services:
+  # Frontend Service
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    <<: *security-defaults
+    logging: *loki-logging
+    ports:
+      - "3000:3000"
+    networks:
+      - frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  # API Gateway
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    <<: *security-defaults
+    logging: *loki-logging
+    ports:
+      - "8000:8000"
+    networks:
+      - frontend
+      - backend
+      - ai_network
+    environment:
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/jarvis
+      - REDIS_URL=redis://redis:6379
+      - MILVUS_HOST=milvus
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+
+  # Ollama LLM Service
+  ollama:
+    image: ollama/ollama:latest
+    <<: *security-defaults
+    logging: *loki-logging
+    ports:
+      - "11434:11434"
+    networks:
+      - ai_network
+    volumes:
+      - model_cache:/root/.ollama
+    environment:
+      - CUDA_VISIBLE_DEVICES=0,1
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_MAX_LOADED_MODELS=3
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_FLASH_ATTENTION=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Milvus Vector Database
+  milvus:
+    image: milvusdb/milvus:latest
+    <<: *security-defaults
+    logging: *loki-logging
+    ports:
+      - "19530:19530"
+    networks:
+      - ai_network
+    volumes:
+      - milvus_data:/var/lib/milvus
+    environment:
+      - ETCD_ENDPOINTS=etcd:2379
+      - MINIO_ADDRESS=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+    depends_on:
+      - etcd
+      - minio
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 64G
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    <<: *security-defaults
+    logging: *loki-logging
+    networks:
+      - backend
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=jarvis
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 16G
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    <<: *security-defaults
+    logging: *loki-logging
+    networks:
+      - backend
+    volumes:
+      - redis_data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 8G
+
+  # OpenSearch
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    <<: *security-defaults
+    logging: *loki-logging
+    networks:
+      - backend
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g
+      - DISABLE_SECURITY_PLUGIN=true
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    <<: *security-defaults
+    logging: *loki-logging
+    networks:
+      - backend
+      - ai_network
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+
+  # Document Processing Service
+  docling:
+    build:
+      context: ./services/document-processor
+      dockerfile: Dockerfile
+    <<: *security-defaults
+    logging: *loki-logging
+    networks:
+      - backend
+      - ai_network
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - REDIS_URL=redis://redis:6379
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [gpu]
+
+  # Multi-Agent Orchestrator
+  orchestrator:
+    build:
+      context: ./services/agent-orchestrator
+      dockerfile: Dockerfile
+    <<: *security-defaults
+    logging: *loki-logging
+    networks:
+      - backend
+      - ai_network
+    environment:
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - OLLAMA_HOST=http://ollama:11434
+      - POSTGRES_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/jarvis
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+
+  # Supporting Services
+  etcd:
+    image: quay.io/coreos/etcd:latest
+    networks:
+      - ai_network
+    command: etcd -advertise-client-urls=http://0.0.0.0:2379 -listen-client-urls=http://0.0.0.0:2379
+
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:latest
+    <<: *security-defaults
+    logging: *loki-logging
+    networks:
+      - monitoring
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    <<: *security-defaults
+    logging: *loki-logging
+    networks:
+      - monitoring
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    ports:
+      - "3001:3000"
+
+  loki:
+    image: grafana/loki:latest
+    <<: *security-defaults
+    networks:
+      - monitoring
+    volumes:
+      - loki_data:/loki
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+```
+
+## Component implementation details
+
+### 1. Frontend & Authentication System
+
+**Next.js Frontend Structure:**
+```typescript
+// app/layout.tsx
+import { Providers } from '@/components/providers'
+import { TabNavigation } from '@/components/navigation/tab-navigation'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>
+          <TabNavigation />
+          <main>{children}</main>
+        </Providers>
+      </body>
+    </html>
+  )
+}
+
+// components/navigation/tab-navigation.tsx
+const tabs = [
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'models', label: 'Models', icon: Cpu },
+  { id: 'files', label: 'Files', icon: FileText },
+  { id: 'tools', label: 'Tools', icon: Wrench },
+  { id: 'memory', label: 'Memory', icon: Brain },
+  { id: 'settings', label: 'Settings', icon: Settings }
+]
+```
+
+**Authentication Implementation:**
+```typescript
+// lib/auth.ts
+import NextAuth from 'next-auth'
+import GoogleProvider from 'next-auth/providers/google'
+import GitHubProvider from 'next-auth/providers/github'
+import CredentialsProvider from 'next-auth/providers/credentials'
+
+export const authOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    }),
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        // Implement user verification with admin approval check
+        const user = await verifyUserWithAdminApproval(credentials)
+        return user
+      }
+    })
+  ],
+  callbacks: {
+    async signIn({ user, account }) {
+      // Check admin approval status
+      const isApproved = await checkAdminApproval(user.email)
+      return isApproved
+    },
+    async session({ session, token }) {
+      // Add custom fields to session
+      session.user.role = token.role
+      session.user.permissions = token.permissions
+      return session
+    }
+  }
+}
+```
+
+### 2. LLM Backend Configuration
+
+**Ollama Service Manager:**
+```python
+# services/llm_manager.py
+import httpx
+from typing import List, Dict
+import asyncio
+
+class OllamaManager:
+    def __init__(self, host: str = "http://ollama:11434"):
+        self.host = host
+        self.client = httpx.AsyncClient(timeout=300.0)
+    
+    async def load_model(self, model_name: str):
+        """Preload a model into GPU memory"""
+        response = await self.client.post(
+            f"{self.host}/api/generate",
+            json={"model": model_name, "keep_alive": -1}
+        )
+        return response.json()
+    
+    async def switch_model(self, from_model: str, to_model: str):
+        """Efficiently switch between models"""
+        # Unload current model
+        await self.unload_model(from_model)
+        # Load new model
+        await self.load_model(to_model)
+    
+    async def generate_streaming(self, model: str, prompt: str):
+        """Stream LLM responses"""
+        async with self.client.stream(
+            "POST",
+            f"{self.host}/api/generate",
+            json={"model": model, "prompt": prompt, "stream": True}
+        ) as response:
+            async for line in response.aiter_lines():
+                if line:
+                    yield json.loads(line)
+```
+
+### 3. RAG System Implementation
+
+**Milvus Configuration:**
+```python
+# services/vector_store.py
+from pymilvus import (
+    connections, 
+    utility, 
+    Collection, 
+    CollectionSchema, 
+    FieldSchema, 
+    DataType
+)
+
+class VectorStore:
+    def __init__(self):
+        connections.connect(
+            alias="default",
+            host="milvus",
+            port="19530"
+        )
+        self.setup_collections()
+    
+    def setup_collections(self):
+        # Document embeddings collection
+        doc_fields = [
+            FieldSchema(name="id", dtype=DataType.INT64, is_primary=True),
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=1024),
+            FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=8192),
+            FieldSchema(name="metadata", dtype=DataType.JSON)
+        ]
+        doc_schema = CollectionSchema(fields=doc_fields)
+        self.docs = Collection("documents", doc_schema)
+        
+        # Create GPU index for fast retrieval
+        index_params = {
+            "metric_type": "COSINE",
+            "index_type": "GPU_IVF_FLAT",
+            "params": {"nlist": 2048}
+        }
+        self.docs.create_index("embedding", index_params)
+```
+
+**Semantic Chunking Strategy:**
+```python
+# services/document_processor.py
+from langchain.text_splitter import SemanticChunker
+from sentence_transformers import SentenceTransformer
+
+class DocumentProcessor:
+    def __init__(self):
+        self.embedder = SentenceTransformer('BAAI/bge-m3')
+        self.chunker = SemanticChunker(
+            embedder=self.embedder,
+            breakpoint_threshold_type="percentile",
+            breakpoint_threshold_amount=0.8
+        )
+    
+    async def process_document(self, doc_path: str):
+        # Parse document using Docling
+        parsed_doc = await self.parse_with_docling(doc_path)
+        
+        # Apply semantic chunking
+        chunks = self.chunker.split_text(parsed_doc.text)
+        
+        # Generate embeddings
+        embeddings = self.embedder.encode(chunks)
+        
+        return {
+            "chunks": chunks,
+            "embeddings": embeddings,
+            "metadata": parsed_doc.metadata
+        }
+```
+
+### 4. Multi-Agent System
+
+**LangGraph Agent Orchestration:**
+```python
+# services/agent_orchestrator.py
+from langgraph.graph import StateGraph, END
+from typing import TypedDict, List
+
+class AgentState(TypedDict):
+    messages: List[str]
+    current_agent: str
+    task_queue: List[dict]
+    results: dict
+
+class AgentOrchestrator:
+    def __init__(self):
+        self.workflow = StateGraph(AgentState)
+        self.setup_agents()
+        
+    def setup_agents(self):
+        # Define agent nodes
+        self.workflow.add_node("researcher", self.research_agent)
+        self.workflow.add_node("coder", self.coding_agent)
+        self.workflow.add_node("writer", self.writing_agent)
+        self.workflow.add_node("analyzer", self.analysis_agent)
+        
+        # Define edges
+        self.workflow.add_edge("researcher", "analyzer")
+        self.workflow.add_edge("analyzer", "coder")
+        self.workflow.add_edge("coder", "writer")
+        self.workflow.add_edge("writer", END)
+        
+        # Compile workflow
+        self.app = self.workflow.compile()
+```
+
+### 5. Personal Assistant & Therapeutic Mode
+
+**Mode Configuration:**
+```python
+# services/therapeutic_mode.py
+class TherapeuticAssistant:
+    def __init__(self):
+        self.modes = {
+            "general": GeneralAssistantMode(),
+            "therapeutic": TherapeuticMode(),
+            "crisis": CrisisMode(),
+            "educational": EducationalMode()
+        }
+        self.current_mode = "general"
+    
+    async def switch_mode(self, mode: str, user_consent: bool):
+        if not user_consent:
+            return {"error": "User consent required for mode switch"}
+        
+        # Save current context
+        await self.save_context()
+        
+        # Switch mode with appropriate prompts
+        self.current_mode = mode
+        return await self.modes[mode].initialize()
+    
+    def get_therapeutic_prompt(self, user_profile: dict):
+        """Generate personalized therapeutic prompts"""
+        base_prompt = """
+        You are a supportive AI assistant specialized in helping individuals 
+        with ADHD and autism. Your responses should be:
+        - Clear and structured
+        - Free from ambiguity
+        - Supportive without being condescending
+        - Focused on practical strategies
+        """
+        
+        # Customize based on user profile
+        if user_profile.get("adhd_support"):
+            base_prompt += "\n- Break down complex tasks into smaller steps"
+            base_prompt += "\n- Provide gentle reminders and focus cues"
+        
+        if user_profile.get("autism_support"):
+            base_prompt += "\n- Use literal, direct language"
+            base_prompt += "\n- Respect routine preferences"
+            
+        return base_prompt
+```
+
+## Security implementation
+
+### Container Security Configuration
+```dockerfile
+# Base Dockerfile with security hardening
+FROM python:3.11-slim as builder
+
+# Install dependencies as root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' appuser
+
+# Switch to non-root user
+USER appuser
+WORKDIR /home/appuser/app
+
+# Copy and install Python dependencies
+COPY --chown=appuser:appuser requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Production stage
+FROM python:3.11-slim
+RUN adduser --disabled-password --gecos '' appuser
+
+# Copy from builder
+COPY --from=builder /home/appuser/.local /home/appuser/.local
+COPY --chown=appuser:appuser . /home/appuser/app
+
+USER appuser
+WORKDIR /home/appuser/app
+ENV PATH=/home/appuser/.local/bin:$PATH
+
+# Security hardening
+RUN chmod -R 750 /home/appuser/app
+
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### Network Security Rules
+```yaml
+# Network policies for container isolation
+apiVersion: v1
+kind: NetworkPolicy
+metadata:
+  name: jarvis-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: jarvis
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: jarvis-frontend
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: jarvis-backend
+    ports:
+    - protocol: TCP
+      port: 5432
+```
+
+## Performance optimization strategies
+
+### GPU Memory Management
+```python
+# Automatic GPU memory optimization
+class GPUMemoryManager:
+    def __init__(self):
+        self.gpu_memory_limit = 32 * 1024  # 32GB in MB
+        self.reserved_memory = 2 * 1024    # 2GB reserved
+        
+    def calculate_model_allocation(self, models: List[dict]):
+        """Calculate optimal model placement across GPUs"""
+        available_memory = self.gpu_memory_limit - self.reserved_memory
+        
+        # Sort models by size
+        sorted_models = sorted(models, key=lambda x: x['size'], reverse=True)
+        
+        gpu_allocation = {0: [], 1: []}
+        gpu_memory = {0: 0, 1: 0}
+        
+        for model in sorted_models:
+            # Find GPU with most available memory
+            target_gpu = 0 if gpu_memory[0] <= gpu_memory[1] else 1
+            
+            if gpu_memory[target_gpu] + model['size'] <= available_memory / 2:
+                gpu_allocation[target_gpu].append(model)
+                gpu_memory[target_gpu] += model['size']
+        
+        return gpu_allocation
+```
+
+### Caching Implementation
+```python
+# Multi-level caching strategy
+class SemanticCache:
+    def __init__(self, redis_client, similarity_threshold=0.95):
+        self.redis = redis_client
+        self.embedder = SentenceTransformer('BAAI/bge-m3')
+        self.threshold = similarity_threshold
+        
+    async def get_cached_response(self, query: str):
+        # Generate query embedding
+        query_embedding = self.embedder.encode(query)
+        
+        # Search for similar queries in cache
+        cached_queries = await self.redis.hgetall("semantic_cache")
+        
+        for cached_query, response in cached_queries.items():
+            cached_embedding = json.loads(cached_query)['embedding']
+            similarity = cosine_similarity(query_embedding, cached_embedding)
+            
+            if similarity > self.threshold:
+                return json.loads(response)
+        
+        return None
+    
+    async def cache_response(self, query: str, response: dict):
+        query_data = {
+            "text": query,
+            "embedding": self.embedder.encode(query).tolist()
+        }
+        
+        await self.redis.hset(
+            "semantic_cache",
+            json.dumps(query_data),
+            json.dumps(response)
+        )
+        
+        # Set TTL
+        await self.redis.expire("semantic_cache", 86400)  # 24 hours
+```
+
+## Deployment instructions
+
+### Initial Setup
+```bash
+# 1. Clone repository
+git clone https://github.com/your-org/jarvis-ai.git
+cd jarvis-ai
+
+# 2. Create environment file
+cp .env.example .env
+# Edit .env with your configuration
+
+# 3. Build custom images
+docker-compose build
+
+# 4. Initialize databases
+docker-compose run --rm api python manage.py migrate
+docker-compose run --rm api python manage.py createsuperuser
+
+# 5. Pull and configure models
+docker-compose run --rm ollama ollama pull deepseek-r1:14b
+docker-compose run --rm ollama ollama pull llama3.1:8b
+docker-compose run --rm ollama ollama pull mistral:7b
+
+# 6. Start all services
+docker-compose up -d
+
+# 7. Verify health
+docker-compose ps
+curl http://localhost:8000/health
+```
+
+### Production Deployment Checklist
+- [ ] Configure SSL/TLS certificates for HTTPS
+- [ ] Set up automated backups for all volumes
+- [ ] Configure firewall rules for exposed ports
+- [ ] Enable monitoring and alerting
+- [ ] Set up log rotation policies
+- [ ] Configure resource limits for all containers
+- [ ] Test disaster recovery procedures
+- [ ] Document all custom configurations
+
+## Monitoring and maintenance
+
+### Health Check Endpoints
+```python
+# api/health.py
+from fastapi import APIRouter
+from typing import Dict
+import psutil
+import pynvml
+
+router = APIRouter()
+
+@router.get("/health")
+async def health_check() -> Dict:
+    """Comprehensive health check endpoint"""
+    health_status = {
+        "status": "healthy",
+        "services": {},
+        "resources": {}
+    }
+    
+    # Check service connectivity
+    health_status["services"]["database"] = await check_database()
+    health_status["services"]["redis"] = await check_redis()
+    health_status["services"]["milvus"] = await check_milvus()
+    health_status["services"]["ollama"] = await check_ollama()
+    
+    # Check system resources
+    health_status["resources"]["cpu_percent"] = psutil.cpu_percent()
+    health_status["resources"]["memory_percent"] = psutil.virtual_memory().percent
+    
+    # Check GPU status
+    pynvml.nvmlInit()
+    for i in range(2):
+        handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+        info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+        health_status["resources"][f"gpu_{i}_memory_used"] = info.used / info.total * 100
+    
+    return health_status
+```
+
+### Grafana Dashboard Configuration
+```json
+{
+  "dashboard": {
+    "title": "Jarvis AI Assistant Monitoring",
+    "panels": [
+      {
+        "title": "LLM Response Times",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, llm_response_duration_seconds_bucket)"
+          }
+        ]
+      },
+      {
+        "title": "GPU Memory Usage",
+        "targets": [
+          {
+            "expr": "nvidia_gpu_memory_used_bytes / nvidia_gpu_memory_total_bytes * 100"
+          }
+        ]
+      },
+      {
+        "title": "Active User Sessions",
+        "targets": [
+          {
+            "expr": "sum(active_user_sessions)"
+          }
+        ]
+      },
+      {
+        "title": "RAG Query Performance",
+        "targets": [
+          {
+            "expr": "rate(rag_queries_total[5m])"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Future expansion considerations
+
+### Scalability Path
+1. **Horizontal Scaling**: Migrate to Kubernetes for multi-node deployment
+2. **GPU Upgrade**: Path to A100/H100 GPUs for larger models
+3. **Model Serving**: Implement vLLM or TGI for optimized inference
+4. **Federation**: Support for multiple Jarvis instances with shared knowledge
+
+### Feature Roadmap
+1. **Voice Integration**: Real-time voice interaction capabilities
+2. **Vision Models**: Multimodal support for image understanding
+3. **Mobile Apps**: Native iOS/Android companion applications
+4. **Plugin System**: Extensible architecture for custom integrations
+
+This implementation blueprint provides a production-ready foundation for deploying Jarvis as a comprehensive, self-hosted AI assistant. The architecture prioritizes performance, security, and extensibility while maintaining the flexibility to adapt to evolving requirements and technologies.
