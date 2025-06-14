@@ -34,10 +34,14 @@ Base = declarative_base()
 async def init_db():
     """Initialize database and create tables"""
     try:
+        # Import all models here to ensure they are registered
+        from app.models.user import User
+        # Additional models will be imported as we create them
+        # from app.models.chat import ChatSession, Message
+        # from app.models.document import Document
+        # from app.models.agent import Agent
+        
         async with engine.begin() as conn:
-            # Import all models here to ensure they are registered
-            # from app.models import user, chat, document, agent
-            
             # Create all tables
             await conn.run_sync(Base.metadata.create_all)
             

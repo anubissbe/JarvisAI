@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: Optional[str] = Field(default=None, env="GITHUB_CLIENT_ID")
     GITHUB_CLIENT_SECRET: Optional[str] = Field(default=None, env="GITHUB_CLIENT_SECRET")
     
+    # API URLs
+    API_URL: str = Field(default="http://localhost:8000", env="API_URL")
+    FRONTEND_URL: Optional[str] = Field(default="http://localhost:3000", env="FRONTEND_URL")
+    
     # OpenAI API (for compatibility/fallback)
     OPENAI_API_KEY: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     OPENAI_API_BASE: str = Field(default="https://api.openai.com/v1", env="OPENAI_API_BASE")
