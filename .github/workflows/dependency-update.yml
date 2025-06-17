@@ -19,7 +19,7 @@ jobs:
   # 🔍 Dependency Audit
   dependency-audit:
     name: 🔍 Dependency Security Audit
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, runnerhub]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -78,7 +78,7 @@ jobs:
   # 📋 Dependency Update Check
   update-check:
     name: 📋 Check for Updates
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, runnerhub]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -118,7 +118,7 @@ jobs:
   # 🤖 Automated Dependency Updates
   dependabot-auto-merge:
     name: 🤖 Auto-merge Dependabot PRs
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, runnerhub]
     if: github.actor == 'dependabot[bot]'
     steps:
       - name: 📥 Checkout PR
@@ -168,7 +168,7 @@ jobs:
   # 📊 License Compliance Check
   license-check:
     name: 📊 License Compliance
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, runnerhub]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -210,7 +210,7 @@ jobs:
   # 📈 Dependency Health Summary
   dependency-summary:
     name: 📈 Dependency Health Summary
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, runnerhub]
     needs: [dependency-audit, update-check, license-check]
     if: always()
     steps:
