@@ -252,7 +252,7 @@ jobs:
   # 📊 Code Quality Summary
   quality-summary:
     name: 📊 Quality Summary
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, runnerhub]
     needs: [code-style, complexity-analysis, docs-check]
     if: always()
     steps:
