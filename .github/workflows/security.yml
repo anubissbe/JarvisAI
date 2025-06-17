@@ -195,7 +195,7 @@ jobs:
   # 🚨 Security Summary
   security-summary:
     name: 🚨 Security Summary
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, runnerhub]
     needs: [codeql, dependency-scan, secret-scan, docker-security, semgrep]
     if: always()
     steps:
