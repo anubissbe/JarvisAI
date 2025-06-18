@@ -1,176 +1,222 @@
 # Pull Request
 
-## 📋 Summary
+## 📋 Description
 
-<!-- Provide a brief summary of your changes -->
+**Summary of changes:**
+Brief description of what this PR does and why it's needed.
 
-**Type of Change:**
+**Related Issue(s):**
+- Fixes #(issue number)
+- Closes #(issue number)
+- Related to #(issue number)
+
+## 🔄 Type of Change
+
 - [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
 - [ ] ✨ New feature (non-breaking change which adds functionality)
 - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📚 Documentation update
-- [ ] 🔧 Configuration/Infrastructure change
-- [ ] 🎨 Code style/formatting change
-- [ ] ♻️ Refactoring (no functional changes)
+- [ ] 📚 Documentation (changes to documentation only)
+- [ ] 🎨 Style (formatting, missing semi colons, etc; no production code change)
+- [ ] ♻️ Refactoring (production code change that neither fixes a bug nor adds a feature)
 - [ ] ⚡ Performance improvement
-- [ ] 🔒 Security enhancement
-
-## 🔗 Related Issues
-
-<!-- Link to related issues -->
-Fixes #(issue number)
-Relates to #(issue number)
-
-## 📝 Detailed Description
-
-<!-- Provide a detailed description of your changes -->
-
-### What was changed:
-- 
-- 
-- 
-
-### Why it was changed:
-- 
-- 
-- 
+- [ ] 🧪 Test (adding missing tests, refactoring tests; no production code change)
+- [ ] 🔧 Chore (updating grunt tasks etc; no production code change)
+- [ ] 🔒 Security fix
+- [ ] 🌐 Accessibility improvement
 
 ## 🧪 Testing
 
-<!-- Describe the tests you ran and how to reproduce them -->
-
-**Test Configuration:**
-- OS: 
-- Python Version: 
-- Node.js Version: 
-- Docker Version: 
-
-**Tests Performed:**
-- [ ] Unit tests pass
-- [ ] Integration tests pass
-- [ ] End-to-end tests pass
-- [ ] Manual testing completed
-- [ ] Performance testing (if applicable)
-- [ ] Security testing (if applicable)
-
 **Test Coverage:**
-- [ ] Tests added for new functionality
-- [ ] Existing tests updated for changes
-- [ ] Code coverage maintained/improved
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] E2E tests added/updated
+- [ ] Manual testing completed
 
-## 📱 Screenshots (if applicable)
+**Testing Instructions:**
+1. Step 1
+2. Step 2
+3. Step 3
 
-<!-- Add screenshots for UI changes -->
+**Test Results:**
+- [ ] All tests pass locally
+- [ ] All tests pass in CI
+- [ ] No new test failures
+- [ ] Coverage maintained/improved
 
-| Before | After |
-|--------|-------|
-| ![Before](url) | ![After](url) |
+## 📸 Screenshots (if applicable)
 
-## 🔍 Code Quality Checklist
+**Before:**
+<!-- Screenshots showing the before state -->
 
-**General:**
-- [ ] Code follows the project's style guidelines
+**After:**
+<!-- Screenshots showing the after state -->
+
+## 🔍 Code Review Checklist
+
+### 📋 General
+- [ ] Code follows the project's coding standards
 - [ ] Self-review of code completed
-- [ ] Code is well-commented and documented
-- [ ] No debugging code or console logs left
-- [ ] All TODO comments addressed or tracked
+- [ ] Code is well-commented, particularly in hard-to-understand areas
+- [ ] No console.log statements or debugging code left
+- [ ] No commented-out code blocks
+- [ ] Variable and function names are clear and descriptive
 
-**Security:**
-- [ ] No sensitive information exposed
-- [ ] Input validation implemented
-- [ ] Authorization checks in place
-- [ ] Dependencies are secure and up-to-date
+### 🔒 Security
+- [ ] No sensitive information exposed (API keys, passwords, etc.)
+- [ ] Input validation implemented where necessary
+- [ ] Authentication/authorization checks in place
+- [ ] SQL injection prevention measures implemented
+- [ ] XSS prevention measures implemented
 
-**Performance:**
-- [ ] No performance regressions introduced
-- [ ] Database queries optimized
-- [ ] Large datasets handled efficiently
-- [ ] Memory usage considerations addressed
+### ⚡ Performance
+- [ ] Code is optimized for performance
+- [ ] No unnecessary API calls or database queries
+- [ ] Efficient algorithms and data structures used
+- [ ] Large datasets handled appropriately
+- [ ] Memory leaks avoided
 
-**Documentation:**
-- [ ] README updated (if needed)
-- [ ] API documentation updated (if needed)
-- [ ] Inline code documentation added
-- [ ] CHANGELOG updated
+### 🧪 Testing
+- [ ] Unit tests written for new functionality
+- [ ] Edge cases covered in tests
+- [ ] Error handling tested
+- [ ] Integration points tested
+- [ ] Performance tests added if applicable
+
+### 📚 Documentation
+- [ ] README updated if necessary
+- [ ] API documentation updated if applicable
+- [ ] Code comments added where necessary
+- [ ] CHANGELOG.md updated
+- [ ] Migration guide provided if breaking changes
+
+## 🔧 Technical Details
+
+### 🏗️ Architecture Changes
+Describe any architectural changes or decisions:
+
+### 📦 Dependencies
+**New dependencies added:**
+- [ ] No new dependencies
+- Dependencies listed and justified:
+  - `package-name@version` - Reason for addition
+
+**Dependencies removed:**
+- [ ] No dependencies removed
+- Dependencies removed:
+  - `package-name` - Reason for removal
+
+### 🗄️ Database Changes
+- [ ] No database changes
+- [ ] Database migration included
+- [ ] Database migration tested
+- [ ] Backward compatibility maintained
+- Migration details:
+
+### 🔄 API Changes
+- [ ] No API changes
+- [ ] Backward compatible API changes
+- [ ] Breaking API changes (documented below)
+- API changes:
 
 ## 🚀 Deployment Notes
 
-<!-- Any special deployment considerations -->
+### 🔧 Configuration Changes
+- [ ] No configuration changes required
+- Configuration changes needed:
 
-**Database Changes:**
-- [ ] Database migrations included
-- [ ] Migration tested on sample data
-- [ ] Rollback plan documented
+### 📋 Pre-deployment Steps
+1. Step 1
+2. Step 2
 
-**Configuration Changes:**
-- [ ] Environment variables documented
-- [ ] Default values provided
-- [ ] Configuration examples updated
+### 📋 Post-deployment Steps
+1. Step 1
+2. Step 2
 
-**Infrastructure Changes:**
-- [ ] Docker configuration updated
-- [ ] Resource requirements documented
-- [ ] Monitoring/alerting considerations
+### 🔄 Rollback Plan
+Steps to rollback if issues occur:
 
-## 🔄 Breaking Changes
+## 📊 Impact Assessment
 
-<!-- List any breaking changes and migration steps -->
+### 👥 User Impact
+- [ ] No user-facing changes
+- [ ] Minor UI changes
+- [ ] Major UI changes
+- [ ] New features for users
+- [ ] Performance improvements users will notice
 
-**API Changes:**
-- 
-- 
+### 🏢 Business Impact
+- [ ] No business impact
+- [ ] Improves user experience
+- [ ] Increases performance
+- [ ] Adds new revenue opportunity
+- [ ] Reduces operational costs
 
-**Configuration Changes:**
-- 
-- 
+### 🎯 Affected Areas
+- [ ] Frontend UI
+- [ ] Backend API
+- [ ] Database
+- [ ] Authentication
+- [ ] File handling
+- [ ] External integrations
+- [ ] Performance
+- [ ] Security
 
-**Migration Steps:**
-1. 
-2. 
-3. 
-
-## 📋 Reviewer Checklist
-
-<!-- For reviewers to check -->
-
-**Code Review:**
-- [ ] Code logic is sound and efficient
-- [ ] Error handling is appropriate
-- [ ] Security considerations addressed
-- [ ] Performance impact acceptable
-
-**Testing:**
-- [ ] Tests are comprehensive and meaningful
-- [ ] Test coverage is adequate
-- [ ] Edge cases are handled
-- [ ] Integration points tested
+## 🔗 Related Resources
 
 **Documentation:**
-- [ ] Documentation is clear and complete
-- [ ] Examples are provided where helpful
-- [ ] API documentation is accurate
+- [Link to relevant documentation]
 
-## 📞 Additional Notes
+**Design Assets:**
+- [Link to design files/mockups]
 
-<!-- Any additional information for reviewers -->
+**Previous Discussions:**
+- [Link to discussions, RFCs, etc.]
 
-**Dependencies:**
-- This PR depends on: 
-- This PR blocks: 
+## 🎯 Reviewer Focus Areas
 
-**Future Work:**
-- Follow-up issues created: 
-- Known limitations: 
+Please pay special attention to:
+- [ ] Algorithm correctness
+- [ ] Error handling
+- [ ] Performance implications
+- [ ] Security considerations
+- [ ] API design
+- [ ] User experience
+- [ ] Code maintainability
 
-**Questions for Reviewers:**
-- 
-- 
+## ✅ Pre-submission Checklist
+
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+- [ ] Any dependent changes have been merged and published
+
+## 🚦 Merge Requirements
+
+**Before merging, ensure:**
+- [ ] All CI checks pass
+- [ ] At least one approving review
+- [ ] All conversations resolved
+- [ ] Branch is up to date with target branch
+- [ ] No merge conflicts
+
+**Additional requirements for this PR:**
+- [ ] Design review completed
+- [ ] Security review completed
+- [ ] Performance review completed
+- [ ] Documentation review completed
 
 ---
 
-**By submitting this pull request, I confirm that:**
-- [ ] I have read and agree to the [Contributing Guidelines](CONTRIBUTING.md)
-- [ ] I have tested my changes thoroughly
-- [ ] I have updated documentation as needed
-- [ ] I have added appropriate tests for my changes
-- [ ] My code follows the established patterns and conventions
+## 💬 Additional Notes
+
+Any additional information that reviewers should know:
+
+## 🙏 Acknowledgments
+
+Special thanks to:
+- @username for helping with...
+- @username for reviewing...
+- @username for suggesting...
