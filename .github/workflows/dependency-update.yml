@@ -133,7 +133,7 @@ jobs:
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
       - name: 🤖 Auto-approve and merge minor updates
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const { data: pr } = await github.rest.pulls.get({
